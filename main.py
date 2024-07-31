@@ -13,7 +13,7 @@ def highlight_sorted_drawings(pdf_path, output_path):
         for drawing in drawings:
             rect = drawing['rect']
             height = round(rect.height, 1)
-            if height == 3:  # Проверка, чтобы высота рисунка была больше 3
+            if height == 3:  # Проверка, чтобы высота рисунка была равна 3
                 if height not in drawings_dict:
                     drawings_dict[height] = []
                 drawings_dict[height].append((page_num, rect))
