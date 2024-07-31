@@ -1,5 +1,6 @@
 import fitz  # импортируем библиотеку pymupdf
 
+
 def highlight_sorted_drawings(pdf_path, output_path):
     # Открываем документ
     doc = fitz.open(pdf_path)
@@ -34,11 +35,18 @@ def highlight_sorted_drawings(pdf_path, output_path):
             page.draw_rect(highlight, color=color, fill_opacity=0.5)
             print(f"Page {page_num + 1}: Rectangle {rect} with height {height} highlighted in color {color}")
 
-            # organization_name of OOO
+            # company_name of OOO
             top_rect = fitz.Rect(rect.x0 + 90, rect.y0 - 15, rect.x1 - 130, rect.y1)
-            organization_name = page.get_textbox(top_rect)
+            company_name = page.get_textbox(top_rect).strip()
             page.draw_rect(top_rect, color=(0, 1, 0), fill_opacity=0.1)  # Размечаем область выше рисунка
-            print(f"Extracted organization_name above rectangle: {organization_name}")
+            print(f"Extracted company_name above rectangle: {company_name}")
+
+            # TODO: to scan for the information in the loop for several lifts
+            # start_date selection
+            start_date_rect = fitz.Rect(rect.x0 - 65, rect.y0 + 5, rect.x1 - 740, rect.y1 + 35)
+            start_date = page.get_textbox(start_date_rect).strip()
+            page.draw_rect(start_date_rect, color=(1, 0, 0), fill_opacity=0.1)  # Размечаем область выше рисунка
+            print(f"Extracted start_date above rectangle: {start_date}")
 
     # Сохраняем документ с изменениями
     doc.save(output_path)
