@@ -1,6 +1,13 @@
 import fitz  # импортируем библиотеку pymupdf
 
 
+def select_extract_data(x0, y0, x1, y1, r, g, b, page):
+    rect = fitz.Rect(x0, y0, x1, y1)
+    textbox = page.get_textbox(rect).strip()
+    page.draw_rect(rect, color=(r, g, b), fill_opacity=0.1)  # Размечаем область выше рисунка
+    return textbox
+
+
 def highlight_sorted_drawings(pdf_path, output_path):
     # Открываем документ
     doc = fitz.open(pdf_path)
@@ -36,21 +43,18 @@ def highlight_sorted_drawings(pdf_path, output_path):
             print(f"Page {page_num + 1}: Rectangle {rect} with height {height} highlighted in color {color}")
 
             # company_name of OOO
-            top_rect = fitz.Rect(rect.x0 + 90, rect.y0 - 15, rect.x1 - 130, rect.y1)
-            company_name = page.get_textbox(top_rect).strip()
-            page.draw_rect(top_rect, color=(0, 1, 0), fill_opacity=0.1)  # Размечаем область выше рисунка
+            company_name = select_extract_data(rect.x0 + 90, rect.y0 - 15, rect.x1 - 130, rect.y1, 0,1,0, page)
             print(f"Extracted company_name above rectangle: {company_name}")
 
             # TODO: to scan for the information in the loop for several lifts
             # start_date selection
-            start_date_rect = fitz.Rect(rect.x0 - 65, rect.y0 + 5, rect.x1 - 740, rect.y1 + 35)
-            start_date = page.get_textbox(start_date_rect).strip()
-            page.draw_rect(start_date_rect, color=(1, 0, 0), fill_opacity=0.1)  # Размечаем область выше рисунка
+            start_date = select_extract_data(rect.x0 - 65, rect.y0 + 5, rect.x1 - 740, rect.y1 + 35, 1,0,0, page)
             print(f"Extracted start_date above rectangle: {start_date}")
 
     # Сохраняем документ с изменениями
     doc.save(output_path)
     print(f"Modified PDF saved as: {output_path}")
+
 
 # Укажите путь к вашему PDF файлу и путь для сохранения измененного PDF
 pdf_path = "1.pdf"
