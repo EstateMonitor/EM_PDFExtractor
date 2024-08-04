@@ -1,11 +1,13 @@
 import fitz  # импортируем библиотеку pymupdf
 import matplotlib.colors as mcolors
 
+def highlight_rect(rect, colour_name, page):
+    colour = mcolors.to_rgb(colour_name)  # По умолчанию черный цвет
+    page.draw_rect(rect, color=colour, fill_opacity=0.1)  # Размечаем область выше рисунка
 
 def select_extract_data(rect, colour_name, page):
-    colour = mcolors.to_rgb(colour_name)  # По умолчанию черный цвет
     textbox = page.get_textbox(rect).strip()
-    page.draw_rect(rect, color=colour, fill_opacity=0.1)  # Размечаем область выше рисунка
+    highlight_rect(rect, colour_name, page)
     return textbox
 
 
