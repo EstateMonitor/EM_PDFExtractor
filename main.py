@@ -1,9 +1,11 @@
 import fitz  # импортируем библиотеку pymupdf
+import matplotlib.colors as mcolors
 
 
-def select_extract_data(rect, r, g, b, page):
+def select_extract_data(rect, colour_name, page):
+    colour = mcolors.to_rgb(colour_name)  # По умолчанию черный цвет
     textbox = page.get_textbox(rect).strip()
-    page.draw_rect(rect, color=(r, g, b), fill_opacity=0.1)  # Размечаем область выше рисунка
+    page.draw_rect(rect, color=colour, fill_opacity=0.1)  # Размечаем область выше рисунка
     return textbox
 
 
@@ -42,29 +44,29 @@ def highlight_sorted_drawings(pdf_path, output_path):
             print(f"Page {page_num + 1}: Rectangle {rect} with height {height} highlighted in color {color}")
 
             # company_name of OOO
-            company_name = select_extract_data(fitz.Rect(rect.x0 + 90, rect.y0 - 15, rect.x1 - 130, rect.y1), 0,1,0, page)
+            company_name = select_extract_data(fitz.Rect(rect.x0 + 90, rect.y0 - 15, rect.x1 - 130, rect.y1), 'green', page)
             print(f"Extracted company_name above rectangle: {company_name}")
 
             # TODO: to scan for the information in the loop for several lifts
-            start_date = select_extract_data(fitz.Rect(rect.x0 - 65, rect.y0 + 5, rect.x1 - 740, rect.y1 + 35), 1,0,0, page)
+            start_date = select_extract_data(fitz.Rect(rect.x0 - 65, rect.y0 + 5, rect.x1 - 740, rect.y1 + 35), 'red', page)
             print(f"Extracted start_date in rectangle: {start_date}")
 
-            start_time = select_extract_data(fitz.Rect(rect.x0 - 8, rect.y0 + 5, rect.x1 - 695, rect.y1 + 35), 0, 0, 1, page)
+            start_time = select_extract_data(fitz.Rect(rect.x0 - 8, rect.y0 + 5, rect.x1 - 695, rect.y1 + 35), 'blue', page)
             print(f"Extracted start_time in rectangle: {start_time}")
 
-            end_date = select_extract_data(fitz.Rect(rect.x0 + 37, rect.y0 + 5, rect.x1 - 650, rect.y1 + 35), 1, 0, 0, page)
+            end_date = select_extract_data(fitz.Rect(rect.x0 + 37, rect.y0 + 5, rect.x1 - 650, rect.y1 + 35), 'red', page)
             print(f"Extracted end_date in rectangle: {end_date}")
 
-            end_time = select_extract_data(fitz.Rect(rect.x0 + 82, rect.y0 + 5, rect.x1 - 605, rect.y1 + 35), 0, 0, 1, page)
+            end_time = select_extract_data(fitz.Rect(rect.x0 + 82, rect.y0 + 5, rect.x1 - 605, rect.y1 + 35), 'blue', page)
             print(f"Extracted end_time in rectangle: {end_time}")
 
-            downtime_hours = select_extract_data(fitz.Rect(rect.x0 + 127, rect.y0 + 5, rect.x1 - 565, rect.y1 + 35), 1, 0, 0, page)
+            downtime_hours = select_extract_data(fitz.Rect(rect.x0 + 127, rect.y0 + 5, rect.x1 - 565, rect.y1 + 35), 'red', page)
             print(f"Extracted end_date in rectangle: {downtime_hours}")
 
-            factory_number = select_extract_data(fitz.Rect(rect.x0 + 168, rect.y0 + 5, rect.x1 - 515, rect.y1 + 35), 1, 0, 1, page)
+            factory_number = select_extract_data(fitz.Rect(rect.x0 + 168, rect.y0 + 5, rect.x1 - 515, rect.y1 + 35), 'magenta', page)
             print(f"Extracted end_date in rectangle: {factory_number}")
 
-            registration_number = select_extract_data(fitz.Rect(rect.x0 + 222, rect.y0 + 5, rect.x1 - 455, rect.y1 + 35), 1, 1, 0, page)
+            registration_number = select_extract_data(fitz.Rect(rect.x0 + 222, rect.y0 + 5, rect.x1 - 455, rect.y1 + 35), 'yellow', page)
             print(f"Extracted end_date in rectangle: {registration_number}")
 
 
