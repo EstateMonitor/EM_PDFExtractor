@@ -1,3 +1,4 @@
+import os
 import fitz  # импортируем библиотеку pymupdf
 import matplotlib.colors as mcolors
 
@@ -13,23 +14,51 @@ def select_extract_data(rect, colour_name, page):
     return textbox
 
 
+def validate_pdf(pdf_path):
+    if not os.path.exists(pdf_path):
+        raise FileNotFoundError(f"Ошибка: Файл '{pdf_path}' не существует")
+    if os.path.getsize(pdf_path) == 0:
+        raise ValueError(f"Ошибка: Файл '{pdf_path}' пустой")
+    try:
+        doc = fitz.open(pdf_path)
+    except Exception as e:
+        raise IOError(f"Ошибка: ошибка открытия файла '{pdf_path}': {e}")
+    if not doc.is_pdf:
+        raise ValueError(f"Ошибка: Файл '{pdf_path}' не является PDF")
+    if doc.needs_pass:
+        raise PermissionError(f"Ошибка: Файл '{pdf_path}' заблокирован паролем")
+    return doc
+
+
 def highlight_sorted_drawings(pdf_path, output_path):
-    # Открываем документ
-    doc = fitz.open(pdf_path)
+    validation_result = validate_pdf(pdf_path)
+    if isinstance(validation_result, str):
+        print(validation_result)
+        return
+    doc = validation_result
+
     drawings_dict = {}
-    # Пройдемся по всем страницам документа
-    for page_num in range(len(doc)):
-        page = doc.load_page(page_num)
-        # Получаем все рисунки на странице
-        drawings = page.get_drawings()
-        # Сохраняем информацию о каждом рисунке
-        for drawing in drawings:
-            rect = drawing['rect']
-            height = round(rect.height, 1)
-            if height == 3:  # Проверка, чтобы высота рисунка была равна 3
-                if height not in drawings_dict:
-                    drawings_dict[height] = []
-                drawings_dict[height].append((page_num, rect))
+    try:
+        # Пройдемся по всем страницам документа
+        for page_num in range(len(doc)):
+            page = doc.load_page(page_num)
+            # Получаем все рисунки на странице
+            drawings = page.get_drawings()
+            # Сохраняем информацию о каждом рисунке
+            for drawing in drawings:
+                rect = drawing['rect']
+                height = round(rect.height, 1)
+                if height == 3:  # Проверка, чтобы высота рисунка была равна 3
+                    if height not in drawings_dict:
+                        drawings_dict[height] = []
+                    drawings_dict[height].append((page_num, rect))
+    # TODO: когда будет добавлено логгирование то сделать обработку следующим способом
+    # except fitz.FitzError as e:
+    #     logging.error(f"Ошибка: ошибка обработки страниц в файле '{pdf_path}': {e}")
+    #     raise
+    except Exception as e:
+        print(f"Ошибка: ошибка обработки страниц в файле '{pdf_path}': {e}")
+        raise
 
     # Сортируем ключи словаря по высоте
     sorted_heights = sorted(drawings_dict.keys())
@@ -81,9 +110,13 @@ def highlight_sorted_drawings(pdf_path, output_path):
                 fitz.Rect(rect.x0 + 222, rect.y0 + 5, rect.x1 - 455, rect.y1 + 35), 'yellow', page)
             print(f"Extracted end_date in rectangle: {registration_number}")
 
-    # Сохраняем документ с изменениями
-    doc.save(output_path)
-    print(f"Modified PDF saved as: {output_path}")
+    # TODO: вынести сохранение с проверкой в отдельную функцию (сделать, когда добавится log)
+    try:
+        # Сохраняем документ с изменениями
+        doc.save(output_path)
+        print(f"Modified PDF saved as: {output_path}")
+    except Exception as e:
+        print(f"Ошибка: ошибка сохранения файла '{output_path}': {e}")
 
 
 # Укажите путь к вашему PDF файлу и путь для сохранения измененного PDF
