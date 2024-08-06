@@ -1,4 +1,5 @@
 import os
+
 import fitz  # импортируем библиотеку pymupdf
 import matplotlib.colors as mcolors
 
@@ -67,7 +68,18 @@ def highlight_sorted_drawings(pdf_path, output_path):
     colors = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 0, 1), (0, 1, 1)]
     color_count = len(colors)
 
-    # Пройдемся по отсортированным высотам и выделим рисунки соответствующим цветом
+    # Создаем словарь смещений для каждого поля
+    offsets = {
+        "company_name": fitz.Rect(90, -15, -130, 0),
+        "start_date": fitz.Rect(-65, 5, -740, 35),
+        "start_time": fitz.Rect(-8, 5, -695, 35),
+        "end_date": fitz.Rect(37, 5, -650, 35),
+        "end_time": fitz.Rect(82, 5, -605, 35),
+        "downtime_hours": fitz.Rect(127, 5, -565, 35),
+        "factory_number": fitz.Rect(168, 5, -515, 35),
+        "registration_number": fitz.Rect(222, 5, -455, 35)
+    }
+
     for index, height in enumerate(sorted_heights):
         color = colors[index % color_count]  # Выбираем цвет из списка
         for page_num, rect in drawings_dict[height]:
@@ -76,39 +88,11 @@ def highlight_sorted_drawings(pdf_path, output_path):
             highlight_rect(highlight, color, page)
             print(f"Page {page_num + 1}: Rectangle {rect} with height {height} highlighted in color {color}")
 
-            # company_name of OOO
-            company_name = select_extract_data(fitz.Rect(rect.x0 + 90, rect.y0 - 15, rect.x1 - 130, rect.y1), 'green',
-                                               page)
-            print(f"Extracted company_name above rectangle: {company_name}")
-
-            # TODO: to scan for the information in the loop for several lifts
-            start_date = select_extract_data(fitz.Rect(rect.x0 - 65, rect.y0 + 5, rect.x1 - 740, rect.y1 + 35), 'red',
-                                             page)
-            print(f"Extracted start_date in rectangle: {start_date}")
-
-            start_time = select_extract_data(fitz.Rect(rect.x0 - 8, rect.y0 + 5, rect.x1 - 695, rect.y1 + 35), 'blue',
-                                             page)
-            print(f"Extracted start_time in rectangle: {start_time}")
-
-            end_date = select_extract_data(fitz.Rect(rect.x0 + 37, rect.y0 + 5, rect.x1 - 650, rect.y1 + 35), 'red',
-                                           page)
-            print(f"Extracted end_date in rectangle: {end_date}")
-
-            end_time = select_extract_data(fitz.Rect(rect.x0 + 82, rect.y0 + 5, rect.x1 - 605, rect.y1 + 35), 'blue',
-                                           page)
-            print(f"Extracted end_time in rectangle: {end_time}")
-
-            downtime_hours = select_extract_data(fitz.Rect(rect.x0 + 127, rect.y0 + 5, rect.x1 - 565, rect.y1 + 35),
-                                                 'red', page)
-            print(f"Extracted end_date in rectangle: {downtime_hours}")
-
-            factory_number = select_extract_data(fitz.Rect(rect.x0 + 168, rect.y0 + 5, rect.x1 - 515, rect.y1 + 35),
-                                                 'magenta', page)
-            print(f"Extracted end_date in rectangle: {factory_number}")
-
-            registration_number = select_extract_data(
-                fitz.Rect(rect.x0 + 222, rect.y0 + 5, rect.x1 - 455, rect.y1 + 35), 'yellow', page)
-            print(f"Extracted end_date in rectangle: {registration_number}")
+            for field, offset in offsets.items():
+                extracted_data = select_extract_data(rect + offset,
+                                                     'green' if field == 'company_name' else 'red' if 'date' in field or field == 'downtime_hours' else 'blue' if 'time' in field else 'magenta' if field == 'factory_number' else 'yellow',
+                                                     page)
+                print(f"Extracted {field}: {extracted_data}")
 
     # TODO: вынести сохранение с проверкой в отдельную функцию (сделать, когда добавится log)
     try:
