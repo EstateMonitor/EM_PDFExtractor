@@ -76,7 +76,7 @@ def highlight_sorted_drawings(pdf_path, output_path):
         "end_date": fitz.Rect(37, 5, -650, 35),
         "end_time": fitz.Rect(82, 5, -605, 35),
         "downtime_hours": fitz.Rect(127, 5, -565, 35),
-        "factory_number": fitz.Rect(168, 5, -515, 35),
+        "factory_number": fitz.Rect(167, 5, -515, 35),
         "registration_number": fitz.Rect(222, 5, -455, 35)
     }
 
