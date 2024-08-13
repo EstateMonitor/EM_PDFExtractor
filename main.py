@@ -1,7 +1,9 @@
 import os
+from time import asctime
 
 import fitz  # импортируем библиотеку pymupdf
 import matplotlib.colors as mcolors
+import logging
 
 
 class PDFExtractor:
@@ -9,6 +11,8 @@ class PDFExtractor:
         self.pdf_path = pdf_path
         self.output_path = output_path
         self.doc = None
+        logging.basicConfig(filename='pdfExtract.log', level=logging.INFO, format='{asctime} - {levelname} - {name} - {message}', style='{')
+        self.logger = logging.getLogger(__name__)
 
     def validate_pdf(self):
         if not os.path.exists(self.pdf_path):
