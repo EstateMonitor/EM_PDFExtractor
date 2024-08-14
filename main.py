@@ -100,17 +100,20 @@ class PDFExtractor:
             raise
         return drawings_dict
 
-    def highlight_sorted_drawings(self):
-        self.validate_pdf()
-
-        drawings_dict = self.extract_and_group_rects()
-        # Сортируем ключи словаря по высоте
-        sorted_heights = sorted(drawings_dict.keys())
-
+    def highlight_drawings(self, drawings_dict, sorted_heights):
         # Список цветов для выделения (RGB)
         colors = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 0, 1), (0, 1, 1)]
         color_count = len(colors)
 
+        for index, height in enumerate(sorted_heights):
+            color = colors[index % color_count]  # Выбираем цвет из списка
+            for page_num, rect in drawings_dict[height]:
+                page = self.doc.load_page(page_num)
+                highlight = fitz.Rect(rect)
+                self.highlight_rect(highlight, color, page)
+                print(f"Page {page_num + 1}: Rectangle {rect} with height {height} highlighted in color {color}")
+
+    def extract_field_data(self, drawings_dict, sorted_heights):
         # Создаем словарь смещений для каждого поля
         offsets = {
             "company_name": fitz.Rect(90, -15, -130, 0),
@@ -124,18 +127,23 @@ class PDFExtractor:
         }
 
         for index, height in enumerate(sorted_heights):
-            color = colors[index % color_count]  # Выбираем цвет из списка
             for page_num, rect in drawings_dict[height]:
                 page = self.doc.load_page(page_num)
-                highlight = fitz.Rect(rect)
-                self.highlight_rect(highlight, color, page)
-                print(f"Page {page_num + 1}: Rectangle {rect} with height {height} highlighted in color {color}")
-
                 for field, offset in offsets.items():
                     extracted_data = self.select_extract_data(rect + offset,
                                                          'green' if field == 'company_name' else 'red' if 'date' in field or field == 'downtime_hours' else 'blue' if 'time' in field else 'magenta' if field == 'factory_number' else 'yellow',
                                                          page)
                     print(f"Extracted {field}: {extracted_data}")
+
+    def highlight_sorted_drawings(self):
+        self.validate_pdf()
+
+        drawings_dict = self.extract_and_group_rects()
+        # Сортируем ключи словаря по высоте
+        sorted_heights = sorted(drawings_dict.keys())
+
+        self.highlight_drawings(drawings_dict, sorted_heights)
+        self.extract_field_data(drawings_dict, sorted_heights)
 
     def save_pdf(self):
         try:
