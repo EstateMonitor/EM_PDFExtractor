@@ -15,27 +15,68 @@ class PDFExtractor:
         self.logger = logging.getLogger(__name__)
 
     def validate_pdf(self):
-        if not os.path.exists(self.pdf_path):
-            raise FileNotFoundError(f"Ошибка: Файл '{self.pdf_path}' не существует")
-        if os.path.getsize(self.pdf_path) == 0:
-            raise ValueError(f"Ошибка: Файл '{self.pdf_path}' пустой")
+        self.logger.info(f"Validation of file: {self.pdf_path}")
         try:
-            self.doc = fitz.open(self.pdf_path)
+            if not os.path.exists(self.pdf_path):
+                raise FileNotFoundError(f"File '{self.pdf_path}' doesn't exist")
+            if os.path.getsize(self.pdf_path) == 0:
+                raise ValueError(f"File '{self.pdf_path}' empty")
+            try:
+                self.doc = fitz.open(self.pdf_path)
+            except Exception as e:
+                raise IOError(f"Error opening file '{self.pdf_path}': {e}")
+
+            if not self.doc.is_pdf:
+                raise ValueError(f"File '{self.pdf_path}' is not a PDF")
+            if self.doc.needs_pass:
+                raise PermissionError(f"File '{self.pdf_path}' protected with password")
+
+            self.logger.info(f"File '{self.pdf_path}' is checked successfully")
+        except FileNotFoundError as e:
+            self.logger.error(e)
+            raise
+
+        except ValueError as e:
+            self.logger.error(e)
+            raise
+
+        except PermissionError as e:
+            self.logger.error(e)
+            raise
+
+        except IOError as e:
+            self.logger.error(e)
+            raise
+
         except Exception as e:
-            raise IOError(f"Ошибка: ошибка открытия файла '{self.pdf_path}': {e}")
-        if not self.doc.is_pdf:
-            raise ValueError(f"Ошибка: Файл '{self.pdf_path}' не является PDF")
-        if self.doc.needs_pass:
-            raise PermissionError(f"Ошибка: Файл '{self.pdf_path}' заблокирован паролем")
+            self.logger.error(f"Error while validating PDF: {e}")
+            raise
 
     def highlight_rect(self, rect, colour_name, page):
-        colour = mcolors.to_rgb(colour_name)
-        page.draw_rect(rect, color=colour, fill_opacity=0.1)  # Размечаем область выше рисунка
+        try:
+            colour = mcolors.to_rgb(colour_name)
+            self.logger.info(f"Selection of area on page {page.number + 1}")
+            page.draw_rect(rect, color=colour, fill_opacity=0.1)  # Размечаем область выше рисунка
+            self.logger.info(f"Selection of area on page {page.number + 1} highlighted successfully")
+        except ValueError as e:
+            self.logger.error(f"Error with colour value '{colour_name}' to RGB: {e}")
+            raise
+        except Exception as e:
+            self.logger.error(f"Error highlighting rectangle with text on page {page.number + 1}: {e}")
+            raise
 
     def select_extract_data(self, rect, colour_name, page):
-        textbox = page.get_textbox(rect).strip()
-        self.highlight_rect(rect, colour_name, page)
-        return textbox
+        try:
+            self.logger.info(f"Selection of text from area {rect} on page {page.number + 1} started")
+            textbox = page.get_textbox(rect).strip()
+            self.logger.info(f"Extracted text: '{textbox}' from area {rect} on page {page.number + 1}")
+
+            self.highlight_rect(rect, colour_name, page)
+            self.logger.info(f"Area {rect} on page {page.number + 1} successfully highlighted with colour {colour_name}")
+            return textbox
+        except Exception as e:
+            self.logger.error(f"Error during extraction of data or highlighting on a page {page.number + 1}: {e}")
+            raise
 
     def highlight_sorted_drawings(self):
         self.validate_pdf()
@@ -55,10 +96,7 @@ class PDFExtractor:
                         if height not in drawings_dict:
                             drawings_dict[height] = []
                         drawings_dict[height].append((page_num, rect))
-        # TODO: когда будет добавлено логгирование то сделать обработку следующим способом
-        # except fitz.FitzError as e:
-        #     logging.error(f"Ошибка: ошибка обработки страниц в файле '{pdf_path}': {e}")
-        #     raise
+
         except Exception as e:
             print(f"Ошибка: ошибка обработки страниц в файле '{self.pdf_path}': {e}")
             raise
