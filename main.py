@@ -78,9 +78,7 @@ class PDFExtractor:
             self.logger.error(f"Error during extraction of data or highlighting on a page {page.number + 1}: {e}")
             raise
 
-    def highlight_sorted_drawings(self):
-        self.validate_pdf()
-
+    def extract_and_group_rects(self):
         drawings_dict = {}
         try:
             # Пройдемся по всем страницам документа
@@ -98,9 +96,14 @@ class PDFExtractor:
                         drawings_dict[height].append((page_num, rect))
 
         except Exception as e:
-            print(f"Ошибка: ошибка обработки страниц в файле '{self.pdf_path}': {e}")
+            self.logger.error(f"Error in extraction of figures from file: '{self.pdf_path}': {e}")
             raise
+        return drawings_dict
 
+    def highlight_sorted_drawings(self):
+        self.validate_pdf()
+
+        drawings_dict = self.extract_and_group_rects()
         # Сортируем ключи словаря по высоте
         sorted_heights = sorted(drawings_dict.keys())
 
