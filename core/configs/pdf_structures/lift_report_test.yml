@@ -1,0 +1,56 @@
+pdf_structure:
+  metadata:
+    title: "Название отчёта"
+    author: "Автор"
+    creation_date: "Дата создания"
+    subject: "Описание документа"
+    hash_sum: "Хэш-сумма"
+
+  objects:
+    - type: "text"
+      name: "report_time" # Время отчёта
+      method: "absolute"
+      offset:
+        x: 520
+        y: 20
+      dimensions:
+        width: 130
+        height: 20
+      page_number: 0
+
+    - type: "table"
+      name: "stoppages_data" # Данные о простоях в таблице
+      method: "by_pointers"
+      blocks:
+        - pointer:
+            type: "drawing"
+            criteria:
+              height: 3.0
+            multiple: true
+          position_offset:
+            x: 0
+            y: -17
+          dimensions:
+            width: 570
+            height: 17
+      row_pointers:
+        - pointer:
+            type: "drawing"
+            criteria:
+              height: 1.5
+            multiple: true
+          row_height: 20
+      table_structure:
+        headers: [ "start_time", "end_time", "downtime_hours", "factory_number", "serial_number" ]
+        column_widths: [ 150, 150, 100, 100 ]
+      end_of_table_marker:
+        type: "drawing"
+        criteria:
+          height: 5.0
+        multiple: false
+        position_offset:
+          x: 0
+          y: 10
+        dimensions:
+          width: 500
+          height: 5
