@@ -9,10 +9,12 @@ class TextHandler:
     def __init__(self, repository):
         self.repository = repository
 
-    def handle(self, config):
+    def handle(self, config, draw_rectangles: bool):
         rect = self.calculate_rect(config)
         page = config['page_number']
         text = self.repository.get_text(page, rect)
+        if draw_rectangles:
+            self.repository.draw_rectangle(page, rect, color=(0, 0, 1))
         return text
 
     @staticmethod
@@ -29,17 +31,17 @@ class TableHandler:
     Обработчик таблиц в PDF-документе
     """
 
-    def __init__(self, repository, page: int):
+    def __init__(self, repository):
         self.repository = repository
-        self.page_num = page
+        self.page_num = 0
 
-    def handle(self, config):
+    def handle(self, config, draw_rectangles: bool):
         if config['method'] == 'by_pointers':
-            return self.handle_by_pointers(config)
+            return self.handle_by_pointers(config, draw_rectangles)
         else:
             raise ValueError(f"Unknown processing type '{config['processing_type']}'")
 
-    def handle_by_pointers(self, config):
+    def handle_by_pointers(self, config, draw_rectangles: bool):
         # 1. Найти и отсортировать указатели блоков
         block_pointers = self.find_block_pointers(config['blocks_pointer'])
 
@@ -54,8 +56,10 @@ class TableHandler:
         # 4. Обработать блоки и строки
         result = []
         for block in blocks:
-            block_header = self.extract_headers(config['blocks_pointer']['headers'], block['block_rect'])
-            rows_headers = [self.extract_headers(config['row_pointer']['headers'], row) for row in block['rows']]
+            block_header = self.extract_headers(config['blocks_pointer']['headers'], block['block_rect'],
+                                                draw_rectangles)
+            rows_headers = [self.extract_headers(config['row_pointer']['headers'], row, draw_rectangles) for row in
+                            block['rows']]
             result.append({
                 "block": block_header,
                 "rows": rows_headers
@@ -101,13 +105,15 @@ class TableHandler:
             })
         return blocks
 
-    def extract_headers(self, header_config, rect: models.Rect):
+    def extract_headers(self, header_config, rect: models.Rect, draw_rectangles: bool):
         data = {}
         x0 = rect.x0
         for header_name, width in zip(header_config['names'], header_config['column_widths']):
             cell_rect = models.Rect(x0, rect.y0, x0 + width, rect.y1)
             data[header_name] = self.repository.get_text(self.page_num, cell_rect)
             x0 += width
+            if draw_rectangles:
+                self.repository.draw_rectangle(self.page_num, cell_rect, color=(0, 1, 0))
         return data
 
     @staticmethod
