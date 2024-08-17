@@ -44,10 +44,10 @@ pdf_structure:
           x: -5
           y: -35
         dimensions:
-          width: 345
+          width: 340
           height: 35
         headers:
           names: [ "start_time", "end_time", "downtime_hours", "factory_number", "serial_number" ]
-          column_widths: [ 95, 90, 43, 60, 57 ]
+          column_widths: [ 95, 90, 43, 55, 57 ]
       end_of_table_marker:
         type: "none"
