@@ -47,7 +47,7 @@ class PDFService(PDFServiceInterface):
 
         except FileNotFoundError:
             print(f"Файл '{pdf_path}' не найден.")
-            raise
+            raise FileNotFoundError(f"Файл '{pdf_path}' не найден.")
         except Exception as e:
             print(f"Ошибка валидации PDF: {e}")
-            raise
+            raise e
