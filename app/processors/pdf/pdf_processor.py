@@ -7,7 +7,7 @@ class PDFProcessor:
         self.config_loader = config_loader
         self.handlers = {
             "text": TextHandler(self.repository),
-            "table": TableHandler(self.repository)
+            "table": TableHandler(self.repository,0)
         }
 
     def process_pdf(self, repo, config):
