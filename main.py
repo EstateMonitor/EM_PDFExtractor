@@ -177,4 +177,14 @@ pdf_path = "downloads/25.06 проверил.pdf"
 pdf_service.validate_pdf(pdf_path)
 
 # Обработка PDF
-pdf_service.process_lift_pdf(pdf_path, output_path="downloads/output/25.06 проверил_размеченный.pdf")
+result = pdf_service.process_lift_pdf(pdf_path, output_path="downloads/output/25.06 проверил_размеченный.pdf")
+
+for company_report in result:
+    print(f"Отчет по компании: {company_report.company_name}")
+    for report in company_report.reports:
+        print(f"\tОтчет по лифту: {report.factory_number}")
+        print(f"\tВремя начала: {report.start_time}")
+        print(f"\tВремя окончания: {report.end_time}" if report.end_time else "\tВремя окончания: Продолжает стоять")
+        print(f"\tЧасы простоя: {report.downtime_hours}")
+        print(f"\tРегистрационный номер: {report.reg_number}")
+        print()

@@ -13,3 +13,18 @@ class Rect:
         self.y1 = y1
         self.width = x1 - x0
         self.height = y1 - y0
+
+
+class LiftCompanyReport:
+    def __init__(self, company_name: str):
+        self.company_name = company_name
+        self.reports = []
+
+
+class LiftReport:
+    def __init__(self, start_time: str, end_time: str, downtime_hours: int, factory_number: str, reg_number: str):
+        self.start_time = start_time
+        self.end_time = end_time
+        self.downtime_hours = downtime_hours
+        self.factory_number = factory_number
+        self.reg_number = reg_number
