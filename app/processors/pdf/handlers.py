@@ -28,60 +28,54 @@ class TextHandler:
 
 class TableHandler:
     """
-    Обработчик таблиц в PDF-документе
+    Обработчик таблиц в PDF-документе.
     """
 
-    def __init__(self, repository):
+    def __init__(self, repository, page_num=0):
         self.repository = repository
-        self.page_num = 0
+        self.page_num = page_num
 
     def handle(self, config, draw_rectangles: bool):
         if config['method'] == 'by_pointers':
             return self.handle_by_pointers(config, draw_rectangles)
         else:
-            raise ValueError(f"Unknown processing type '{config['processing_type']}'")
+            raise ValueError(f"Unknown processing type '{config['method']}'")
 
     def handle_by_pointers(self, config, draw_rectangles: bool):
         # 1. Найти и отсортировать указатели блоков
         block_pointers = self.find_block_pointers(config['blocks_pointer'])
+        block_pointers.sort(key=lambda b: b.y0)  # Сортировка по Y
 
-        # 2. Отсортировать строки
-        block_pointers.sort(key=lambda b: b['y0'])  # Сортировка по Y
-
-        # 3. Найти и группировать строки
+        # 2. Найти и сортировать строки
         rows = self.find_rows(config['row_pointer'])
         rows.sort(key=lambda r: r.y0)  # Сортировка строк по Y
+
+        # 3. Группировка строк по блокам
         blocks = self.group_rows_by_blocks(block_pointers, rows)
 
         # 4. Обработать блоки и строки
         result = []
         for block in blocks:
-            block_header = self.extract_headers(config['blocks_pointer']['headers'], block['block_rect'],
-                                                draw_rectangles)
-            rows_headers = [self.extract_headers(config['row_pointer']['headers'], row, draw_rectangles) for row in
-                            block['rows']]
+            block_header = self.extract_data_from_rect(config['blocks_pointer']['headers'], block['block_rect'],
+                                                       draw_rectangles)
+            rows_headers = [self.extract_data_from_rect(config['row_pointer']['headers'], row, draw_rectangles) for row
+                            in block['rows']]
             result.append({
                 "block": block_header,
                 "rows": rows_headers
             })
         return result
 
-    def find_block_pointers(self, block_config):
+    def find_block_pointers(self, block_config) -> list[models.Rect]:
         block_pointers = []
-
         drawings = self.repository.get_drawings(self.page_num)
         for drawing in drawings:
             if self.match_drawing(drawing, block_config['criteria']):
                 block_rect = self.calculate_rect(drawing, block_config)
-                block_pointers.append({
-                    'block_rect': block_rect,
-                    'y0': block_rect.y0  # Для сортировки по оси Y
-                })
-        if len(block_pointers) != 1 and block_config['multiple'] is False:
-            raise ValueError(f"Expected 1 drawing, got {len(drawings)}")
+                block_pointers.append(block_rect)
         return block_pointers
 
-    def find_rows(self, row_pointer_config):
+    def find_rows(self, row_pointer_config) -> list[models.Rect]:
         rows = []
         drawings = self.repository.get_drawings(self.page_num)
         for drawing in drawings:
@@ -94,18 +88,17 @@ class TableHandler:
     def group_rows_by_blocks(block_pointers, rows):
         blocks = []
         for i, block in enumerate(block_pointers):
-            # Определяем границы для строк текущего блока
-            block_top = block['y0']
-            block_bottom = block_pointers[i + 1]['y0'] if i + 1 < len(block_pointers) else float('inf')
+            block_top = block.y0
+            block_bottom = block_pointers[i + 1].y0 if i + 1 < len(block_pointers) else float('inf')
 
             block_rows = [row for row in rows if block_top <= row.y0 < block_bottom]
             blocks.append({
-                'block_rect': block['block_rect'],
+                'block_rect': block,
                 'rows': block_rows
             })
         return blocks
 
-    def extract_headers(self, header_config, rect: models.Rect, draw_rectangles: bool):
+    def extract_data_from_rect(self, header_config, rect: models.Rect, draw_rectangles: bool):
         data = {}
         x0 = rect.x0
         for header_name, width in zip(header_config['names'], header_config['column_widths']):
@@ -118,15 +111,16 @@ class TableHandler:
 
     @staticmethod
     def match_drawing(drawing, criteria: dict, inaccuracy=0.1):
-        valid = True
         for criterion, criterion_value in criteria.items():
             if criterion == 'height':
-                valid = valid and abs(drawing['rect'].height - criterion_value) < inaccuracy
+                if not abs(drawing['rect'].height - criterion_value) < inaccuracy:
+                    return False
             elif criterion == 'width':
-                valid = valid and abs(drawing['rect'].width - criterion_value) < inaccuracy
+                if not abs(drawing['rect'].width - criterion_value) < inaccuracy:
+                    return False
             else:
                 raise ValueError(f"Unknown criterion '{criterion}'")
-        return valid
+        return True
 
     @staticmethod
     def calculate_rect(drawing, config) -> models.Rect:
@@ -134,16 +128,3 @@ class TableHandler:
                            drawing['rect'].y0 + config['offset']['y'],
                            drawing['rect'].x0 + config['offset']['x'] + config['dimensions']['width'],
                            drawing['rect'].y0 + config['offset']['y'] + config['dimensions']['height'])
-
-    def get_block_headers(self, block_config, block_rect) -> list[str]:
-        headers = []
-        offset = 0
-        for header_name, width in zip(block_config['headers']['names'],
-                                      block_config['headers']['column_widths']):
-            header_rect = models.Rect(block_rect.x0 + offset,
-                                      block_rect.y0,
-                                      block_rect.x0 + width + offset,
-                                      block_rect.y1)
-            offset += width
-            headers.append(self.repository.get_text(self.page_num, header_rect))
-        return headers

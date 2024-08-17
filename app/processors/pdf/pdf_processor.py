@@ -11,7 +11,10 @@ class PDFProcessor:
         }
 
     def process_pdf(self, draw_rectangles=False):
+        res_objects = {}
         for obj in self.config['pdf_structure']['objects']:
             handler = self.handlers[obj['type']]
             result = handler.handle(obj, draw_rectangles)
             print(f"Processed {obj['type']} named {obj['name']}: {result}")
+            res_objects[obj['name']] = result
+        return res_objects

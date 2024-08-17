@@ -22,7 +22,7 @@ class PDFService(PDFServiceInterface):
             self.repository.load_pdf(pdf_path)
 
             # Обработка PDF с использованием процессора
-            processor.process_pdf(draw_rectangles=output_path is not None)
+            extracted_data = processor.process_pdf(draw_rectangles=output_path is not None)
             if output_path:
                 self.repository.save_pdf(output_path)
                 print(f"Размеченный PDF сохранен: {output_path}")
@@ -31,7 +31,6 @@ class PDFService(PDFServiceInterface):
         except Exception as e:
             print(f"Ошибка обработки PDF: {e}")
             raise
-
 
     def validate_pdf(self, pdf_path: str) -> None:
         """
