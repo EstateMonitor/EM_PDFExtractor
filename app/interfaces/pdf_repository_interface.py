@@ -11,7 +11,7 @@ class PDFRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    def get_page(self, page_number):
+    def get_page(self, page_num):
         pass
 
     @abstractmethod
@@ -19,13 +19,13 @@ class PDFRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    def get_drawings(self, page):
+    def get_drawings(self, page_num):
         pass
 
     @abstractmethod
-    def get_text(self, page, rect):
+    def get_text(self, page_num, rect):
         pass
 
     @abstractmethod
-    def draw_rectangle(self, page, rect, color):
+    def draw_rectangle(self, page_num, rect, color):
         pass
