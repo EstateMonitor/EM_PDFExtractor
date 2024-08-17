@@ -9,26 +9,29 @@ class PDFService(PDFServiceInterface):
         self.config_loader = config_loader
         self.repository = repository
 
-    def process_lift_pdf(self, pdf_path: str) -> None:
+    def process_lift_pdf(self, pdf_path: str, output_path=None) -> None:
         """
         Обрабатывает PDF-документ о простое лифтов
         """
         config_path = "core/configs/pdf_structures/lift_report_test.yml"
         try:
             config = self.config_loader.load_config(config_path)
-            processor = PDFProcessor(self.repository, self.config_loader)
+            processor = PDFProcessor(self.repository, config)
 
             # Загрузка PDF
             self.repository.load_pdf(pdf_path)
 
             # Обработка PDF с использованием процессора
-            processor.process_pdf(self.repository, config)
+            processor.process_pdf(draw_rectangles=output_path is not None)
+            if output_path:
+                self.repository.save_pdf(output_path)
+                print(f"Размеченный PDF сохранен: {output_path}")
 
             print(f"PDF обработан")
-
         except Exception as e:
             print(f"Ошибка обработки PDF: {e}")
             raise
+
 
     def validate_pdf(self, pdf_path: str) -> None:
         """

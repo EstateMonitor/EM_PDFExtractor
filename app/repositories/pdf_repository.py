@@ -40,4 +40,5 @@ class PDFRepository(PDFRepositoryInterface):
         return self.pages[page_num].get_textbox(rect).strip()
 
     def draw_rectangle(self, page_num: int, rect: models.Rect, color):
+        rect = fitz.Rect(rect.x0, rect.y0, rect.x1, rect.y1)
         self.pages[page_num].draw_rect(rect, color=color, fill_opacity=0.1)

@@ -7,7 +7,7 @@ class PDFServiceInterface(ABC):
     """
 
     @abstractmethod
-    def process_lift_pdf(self, pdf_path: str) -> None:
+    def process_lift_pdf(self, pdf_path: str, output_path=None) -> None:
         pass
 
     @abstractmethod

@@ -177,4 +177,4 @@ pdf_path = "downloads/25.06 проверил.pdf"
 pdf_service.validate_pdf(pdf_path)
 
 # Обработка PDF
-pdf_service.process_lift_pdf(pdf_path)
+pdf_service.process_lift_pdf(pdf_path, output_path="downloads/output/25.06 проверил_размеченный.pdf")
