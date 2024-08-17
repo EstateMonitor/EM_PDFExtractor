@@ -15,6 +15,9 @@ class PDFRepository(PDFRepositoryInterface):
         # Get pages immediately
         self.pages = [self.doc.load_page(page_num) for page_num in range(self.doc.page_count)]
 
+    def get_num_pages(self) -> int:
+        return self.doc.page_count
+
     def get_metadata(self) -> dict:
         return {
             "number_of_pages": self.doc.page_count,
@@ -35,10 +38,12 @@ class PDFRepository(PDFRepositoryInterface):
             return self.drawings
         return self.pages[page_num].get_drawings()
 
-    def get_text(self, page_num: int, rect: models.Rect):
+    def get_text(self, rect: models.Rect):
+        page = rect.page
         rect = fitz.Rect(rect.x0, rect.y0, rect.x1, rect.y1)
-        return self.pages[page_num].get_textbox(rect).strip()
+        return self.pages[page].get_textbox(rect).strip()
 
-    def draw_rectangle(self, page_num: int, rect: models.Rect, color):
+    def draw_rectangle(self, rect: models.Rect, color):
+        page = rect.page
         rect = fitz.Rect(rect.x0, rect.y0, rect.x1, rect.y1)
-        self.pages[page_num].draw_rect(rect, color=color, fill_opacity=0.1)
+        self.pages[page].draw_rect(rect, color=color, fill_opacity=0.1)

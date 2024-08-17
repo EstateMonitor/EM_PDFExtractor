@@ -7,6 +7,10 @@ class PDFRepositoryInterface(ABC):
     """
 
     @abstractmethod
+    def get_num_pages(self) -> int:
+        pass
+
+    @abstractmethod
     def load_pdf(self, file_path):
         pass
 
@@ -23,9 +27,9 @@ class PDFRepositoryInterface(ABC):
         pass
 
     @abstractmethod
-    def get_text(self, page_num, rect):
+    def get_text(self, rect):
         pass
 
     @abstractmethod
-    def draw_rectangle(self, page_num, rect, color):
+    def draw_rectangle(self, rect, color):
         pass

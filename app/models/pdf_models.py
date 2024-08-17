@@ -6,11 +6,12 @@ class PDFMetadata:
 
 
 class Rect:
-    def __init__(self, x0: float, y0: float, x1: float, y1: float):
+    def __init__(self, x0: float, y0: float, x1: float, y1: float, page: int):
         self.x0 = x0
         self.y0 = y0
         self.x1 = x1
         self.y1 = y1
+        self.page = page  # У нас трёхмерное пространство по сути, две координаты на странице и номер страницы
         self.width = x1 - x0
         self.height = y1 - y0
 
