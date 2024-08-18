@@ -1,51 +1,34 @@
-import fitz  # импортируем библиотеку pymupdf
+# ДЕМОНСТРАЦИОННЫЙ ФАЙЛ
+# ПРИМЕР РАБОТЫ С СЕРВИСОМ PDF, ОБРАБОТКА PDF-ДОКУМЕНТОВ О ПРОСТОЕ ЛИФТОВ
+# НЕ БУДЕТ РАБОТАТЬ БЕЗ НАЛИЧИЯ ФАЙЛОВ В ПАПКЕ downloads
+# Для работы необходимо создать папку downloads и поместить в нее PDF файлы
 
-def highlight_sorted_drawings(pdf_path, output_path):
-    # Открываем документ
-    doc = fitz.open(pdf_path)
-    drawings_dict = {}
-    # Пройдемся по всем страницам документа
-    for page_num in range(len(doc)):
-        page = doc.load_page(page_num)
-        # Получаем все рисунки на странице
-        drawings = page.get_drawings()
-        # Сохраняем информацию о каждом рисунке
-        for drawing in drawings:
-            rect = drawing['rect']
-            height = round(rect.height, 1)
-            if height == 3:  # Проверка, чтобы высота рисунка была больше 3
-                if height not in drawings_dict:
-                    drawings_dict[height] = []
-                drawings_dict[height].append((page_num, rect))
+from app.repositories.pdf_repository import PDFRepository
+from app.services.config_loader import ConfigLoader
+from app.services.pdf_service import PDFService
 
-    # Сортируем ключи словаря по высоте
-    sorted_heights = sorted(drawings_dict.keys())
+config_loader = ConfigLoader()
+repository = PDFRepository()
 
-    # Список цветов для выделения (RGB)
-    colors = [(1, 0, 0), (0, 1, 0), (0, 0, 1), (1, 1, 0), (1, 0, 1), (0, 1, 1)]
-    color_count = len(colors)
+pdf_service = PDFService(config_loader, repository)
 
-    # Пройдемся по отсортированным высотам и выделим рисунки соответствующим цветом
-    for index, height in enumerate(sorted_heights):
-        color = colors[index % color_count]  # Выбираем цвет из списка
-        for page_num, rect in drawings_dict[height]:
-            page = doc.load_page(page_num)
-            highlight = fitz.Rect(rect)
-            page.draw_rect(highlight, color=color, fill_opacity=0.5)
-            print(f"Page {page_num + 1}: Rectangle {rect} with height {height} highlighted in color {color}")
+files = ["25.06 проверил.pdf", "16.06 проверил.pdf"]
 
-            # organization_name of OOO
-            top_rect = fitz.Rect(rect.x0 + 90, rect.y0 - 15, rect.x1 - 130, rect.y1)
-            organization_name = page.get_textbox(top_rect)
-            page.draw_rect(top_rect, color=(0, 1, 0), fill_opacity=0.1)  # Размечаем область выше рисунка
-            print(f"Extracted organization_name above rectangle: {organization_name}")
+for file in files:
+    pdf_path = "downloads/" + file
+    # Валидация PDF перед обработкой
+    pdf_service.validate_pdf(pdf_path)
 
-    # Сохраняем документ с изменениями
-    doc.save(output_path)
-    print(f"Modified PDF saved as: {output_path}")
+    # Обработка PDF
+    result = pdf_service.process_lift_pdf(pdf_path, output_path="downloads/output/" + file + "_размеченный.pdf")
+    # Если не передавать output_path, то разметка не будет сохранена
 
-# Укажите путь к вашему PDF файлу и путь для сохранения измененного PDF
-pdf_path = "1.pdf"
-output_path = "highlighted_sorted_drawings.pdf"
-
-highlight_sorted_drawings(pdf_path, output_path)
+    for company_report in result:
+        print(f"Отчет по компании: {company_report.company_name}")
+        for i, report in enumerate(company_report.reports):
+            print(f"\t{i + 1}. Отчет по лифту: {report.factory_number}")
+            print(f"\tВремя начала: {report.start_time}")
+            print("\tВремя окончания: ", report.end_time if report.end_time else "Продолжает стоять")
+            print(f"\tЧасы простоя: {report.downtime_hours}")
+            print(f"\tРегистрационный номер: {report.reg_number}")
+            print()
