@@ -4,12 +4,19 @@ import app.models.pdf_models as models
 class TextHandler:
     """
     Обработчик текстовых блоков в PDF-документе
+    Нужен для извлечения "одиночного" текста
     """
 
     def __init__(self, repository):
         self.repository = repository
 
     def handle(self, config, draw_rectangles: bool):
+        """
+        Обработка текстового поля в PDF-документе по конфигурации
+        :param config: Конфигурация обработки текстового поля
+        :param draw_rectangles: Рисовать ли прямоугольник вокруг обработанного текста (для отладки)
+        :return: Текст внутри прямоугольника
+        """
         rect = self.calculate_rect(config, config['page_number'])
         text = self.repository.get_text(rect)
         if draw_rectangles:
@@ -18,6 +25,12 @@ class TextHandler:
 
     @staticmethod
     def calculate_rect(config, page):
+        """
+        Вычисление прямоугольника по конфигурации и номеру страницы (по сути по полным трёхмерным координатам)
+        :param config: Конфигурация обработки текстового поля
+        :param page: Номер страницы
+        :return: Прямоугольник models.Rect
+        """
         x = config['offset']['x']
         y = config['offset']['y']
         width = config['dimensions']['width']
@@ -28,21 +41,42 @@ class TextHandler:
 class TableHandler:
     """
     Обработчик таблиц в PDF-документе.
+    Нужен для извлечения данных из таблицы, может использовать разные методы обработки
+    Реализован только один, но оставлена возможность добавления других методов
     """
 
     def __init__(self, repository):
         self.repository = repository
 
     def handle(self, config, draw_rectangles: bool):
-        if config['method'] == 'by_pointers':
+        """
+        Обработка таблицы в PDF-документе по конфигурации
+        :param config: Конфигурация обработки таблицы
+        :param draw_rectangles: Рисовать ли прямоугольники вокруг обработанных объектов (для отладки)
+        :return: Список словарей с данными из таблицы
+        """
+        if config['method'] == 'by_pointers':  # Обработка таблицы по указателям, единственный метод пока-что
             return self.handle_by_pointers(config, draw_rectangles)
         else:
             raise ValueError(f"Unknown processing type '{config['method']}'")
 
     def handle_by_pointers(self, config, draw_rectangles: bool):
+        """
+        Обработка таблицы по указателям блоков и строк
+        Использует указатели блоков и строк для обработки таблицы
+        Указателями могут быть любой вид объектов в PDF, которые можно найти по признакам
+        :param config: Конфигурация обработки таблицы
+        :param draw_rectangles: Рисовать ли прямоугольники вокруг обработанных объектов (для отладки)
+        :return: Список словарей с данными из таблицы
+        """
         # 1. Найти и отсортировать указатели блоков на всех страницах
+        # ( Блоками мы называем части таблицы, которые имеют собственный заголовок и строки с данными )
+        # ( В нашем случае с лифтами заголовок блока это просто название компании,
+        # но тут может быть что угодно, метод универсальный )
+
         block_pointers = self.find_block_pointers(config['blocks_pointer'])
         block_pointers.sort(key=lambda b: (b.page, b.y0))  # Сортировка по странице и координате Y
+        # При чём сортировка по странице более приоритетна, чтобы сначала шли блоки с одной страницы
 
         # 2. Найти и сортировать строки на всех страницах
         rows = self.find_rows(config['row_pointer'])
@@ -65,17 +99,31 @@ class TableHandler:
         return result
 
     def find_block_pointers(self, block_config) -> list[models.Rect]:
+        """
+        Находит указатели блоков на всех страницах
+        :param block_config:
+        :return:
+        """
         block_pointers = []
         num_pages = self.repository.get_num_pages()
         for page_num in range(num_pages):
+            # Получаем все рисунки на странице
             drawings = self.repository.get_drawings(page_num)
             for drawing in drawings:
+                # Проверяем, что рисунок соответствует критериям
                 if self.match_drawing(drawing, block_config['criteria']):
+                    # Мы сохраняем полную координату прямоугольника, то есть включая ширину, высоту и номер страницы
                     block_rect = self.calculate_rect(drawing, block_config, page_num)
                     block_pointers.append(block_rect)
         return block_pointers
 
     def find_rows(self, row_pointer_config) -> list[models.Rect]:
+        """
+        Находит строки на всех страницах по указателям
+        :param row_pointer_config: Конфигурация указателей строк
+        :return: Список прямоугольников строк models.Rect
+        """
+        # Тут всё ровно так же, как и с блоками, только с другими критериями
         rows = []
         num_pages = self.repository.get_num_pages()
         for page_num in range(num_pages):
@@ -88,17 +136,25 @@ class TableHandler:
 
     @staticmethod
     def group_rows_by_blocks(block_pointers, rows):
+        """
+        Группирует строки по блокам, используя их положение на странице
+        Самый сложный метод
+        :param block_pointers: Все блоки на всех страницах
+        :param rows: Все строки на всех страницах
+        :return: Список блоков с принадлежащими им строками
+        """
         blocks = []
         row_index = 0  # Индекс текущей строки
 
         for i, block in enumerate(block_pointers):  # Проходим по всем блокам
             current_block = block
+            # Следующий блок, если он есть
             next_block = block_pointers[i + 1] if i + 1 < len(block_pointers) else None
-
+            # Строки, принадлежащие текущему блоку
             block_rows = []
 
-            while row_index < len(rows):
-                row = rows[row_index]
+            while row_index < len(rows):  # Проходим по всем строкам
+                row = rows[row_index]  # Текущая строка
 
                 # Проверяем, находится ли строка на той же странице, что и блок
                 if row.page == current_block.page:
@@ -132,6 +188,13 @@ class TableHandler:
         return blocks
 
     def extract_data_from_rect(self, header_config, rect: models.Rect, draw_rectangles: bool):
+        """
+        Извлекает данные из прямоугольника на странице, !используется как для блоков, так и для строк!
+        :param header_config: Конфигурация заголовков столбцов
+        :param rect: Прямоугольник с данными
+        :param draw_rectangles: Рисовать ли прямоугольники вокруг обработанных объектов (для отладки)
+        :return: Словарь с данными из прямоугольника
+        """
         data = {}
         x0 = rect.x0
         for header_name, width in zip(header_config['names'], header_config['column_widths']):
@@ -144,6 +207,15 @@ class TableHandler:
 
     @staticmethod
     def match_drawing(drawing, criteria: dict, inaccuracy=0.1):
+        """
+        Проверяет, соответствует ли рисунок критериям указанным в конфигурации
+        Можно реализовать любые критерии для поиска, например, по размеру, цвету, шрифту и т.д.
+        Пока-что реализовано только сравнение размеров, их хватает для нашей задачи
+        :param drawing: Рисунок fitz.Drawing
+        :param criteria: Критерии для сравнения
+        :param inaccuracy: Допустимая погрешность для сравнения размеров
+        :return: True, если рисунок соответствует критериям, иначе False
+        """
         for criterion, criterion_value in criteria.items():
             if criterion == 'height':
                 if not abs(drawing['rect'].height - criterion_value) < inaccuracy:
@@ -157,6 +229,14 @@ class TableHandler:
 
     @staticmethod
     def calculate_rect(drawing, config, page_num) -> models.Rect:
+        """
+        Вычисляет прямоугольник по рисунку и конфигурации
+        Нужен для того, чтобы учесть смещение и размеры прямоугольника
+        :param drawing: Рисунок fitz.Drawing
+        :param config: Конфигурация обработки
+        :param page_num: Номер страницы
+        :return: Прямоугольник models.Rect
+        """
         return models.Rect(
             x0=drawing['rect'].x0 + config['offset']['x'],
             y0=drawing['rect'].y0 + config['offset']['y'],

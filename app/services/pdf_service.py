@@ -7,7 +7,19 @@ from app.services.config_loader import ConfigLoader
 
 
 class PDFService(PDFServiceInterface):
+    """
+    Сервисный слой для обработки PDF-файлов
+    Нужен для обработки PDF-документов о простое лифтов
+    Инкапсулирует работу с репозиторием и процессором PDF
+    Должен содержать основную логику работы с PDF
+    При этом не должен содержать логику обработки PDF-документов напрямую
+    Используется в контроллерах для обработки PDF-файлов (в планах, при реализаци API)
+    """
+
     def __init__(self, config_loader: ConfigLoader, repository: PDFRepository):
+        """
+        Инициализация сервиса для обработки PDF-файлов
+        """
         self.config_loader = config_loader
         self.repository = repository
 
@@ -22,12 +34,14 @@ class PDFService(PDFServiceInterface):
         config_path = "core/configs/pdf_structures/lift_report_test.yml"
         try:
             config = self.config_loader.load_config(config_path)
+            # Использует PDFProcessor, который может обработать любой вид PDF
+            # Но мы сами определяем, какие объекты в PDF нас интересуют используя конфигурацию вида PDF
             processor = PDFProcessor(self.repository, config)
 
             # Загрузка PDF
             self.repository.load_pdf(pdf_path)
 
-            # Обработка PDF с использованием процессора
+            # Обработка PDF с использованием процессора и конфигурации отчёта о простое лифтов
             extracted_data = processor.process_pdf(draw_rectangles=output_path is not None)
             if output_path:
                 self.repository.save_pdf(output_path)
