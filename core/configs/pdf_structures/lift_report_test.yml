@@ -1,11 +1,4 @@
 pdf_structure:
-  metadata:
-    title: "Название отчёта"
-    author: "Автор"
-    creation_date: "Дата создания"
-    subject: "Описание документа"
-    hash_sum: "Хэш-сумма"
-
   objects:
     - type: "text"
       name: "report_time" # Время отчёта
@@ -21,36 +14,33 @@ pdf_structure:
     - type: "table"
       name: "stoppages_data" # Данные о простоях в таблице
       method: "by_pointers"
-      blocks:
-        - pointer:
-            type: "drawing"
-            criteria:
-              height: 3.0
-            multiple: true
-          position_offset:
-            x: 0
-            y: -17
-          dimensions:
-            width: 570
-            height: 17
-      row_pointers:
-        - pointer:
-            type: "drawing"
-            criteria:
-              height: 1.5
-            multiple: true
-          row_height: 20
-      table_structure:
-        headers: [ "start_time", "end_time", "downtime_hours", "factory_number", "serial_number" ]
-        column_widths: [ 150, 150, 100, 100 ]
-      end_of_table_marker:
+      blocks_pointer:
         type: "drawing"
         criteria:
-          height: 5.0
-        multiple: false
-        position_offset:
+          height: 3.0
+        multiple: true
+        offset:
           x: 0
-          y: 10
+          y: -17
         dimensions:
-          width: 500
-          height: 5
+          width: 570
+          height: 17
+        headers:
+          names: [ "company_name" ]
+          column_widths: [ 570 ]
+      row_pointer:
+        type: "drawing"
+        criteria:
+          height: 0.1
+        multiple: true
+        offset:
+          x: -5
+          y: -35
+        dimensions:
+          width: 340
+          height: 35
+        headers:
+          names: [ "start_time", "end_time", "downtime_hours", "factory_number", "serial_number" ]
+          column_widths: [ 95, 90, 43, 55, 57 ]
+      end_of_table_marker:
+        type: "none"

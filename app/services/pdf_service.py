@@ -1,30 +1,57 @@
 from app.interfaces.pdf_service_interface import PDFServiceInterface
+from app.models.pdf_models import LiftCompanyReport
 from app.processors.pdf.pdf_processor import PDFProcessor
 from app.repositories.pdf_repository import PDFRepository
+from app.services import utils
 from app.services.config_loader import ConfigLoader
 
 
 class PDFService(PDFServiceInterface):
+    """
+    Сервисный слой для обработки PDF-файлов
+    Нужен для обработки PDF-документов о простое лифтов
+    Инкапсулирует работу с репозиторием и процессором PDF
+    Должен содержать основную логику работы с PDF
+    При этом не должен содержать логику обработки PDF-документов напрямую
+    Используется в контроллерах для обработки PDF-файлов (в планах, при реализаци API)
+    """
+
     def __init__(self, config_loader: ConfigLoader, repository: PDFRepository):
+        """
+        Инициализация сервиса для обработки PDF-файлов
+        """
         self.config_loader = config_loader
         self.repository = repository
 
-    def process_lift_pdf(self, pdf_path: str) -> None:
+    def process_lift_pdf(self, pdf_path: str, output_path=None) -> list[LiftCompanyReport]:
         """
-        Обрабатывает PDF-документ о простое лифтов
+        Обрабатывает PDF-документ о простое лифтов и возвращает массив моделей данных.
+
+        :param pdf_path: Путь к PDF-файлу
+        :param output_path: Путь для сохранения размеченного PDF-файла (необязательный)
+        :return: Массив моделей LiftCompanyReport
         """
         config_path = "core/configs/pdf_structures/lift_report_test.yml"
         try:
             config = self.config_loader.load_config(config_path)
-            processor = PDFProcessor(self.repository, self.config_loader)
+            # Использует PDFProcessor, который может обработать любой вид PDF
+            # Но мы сами определяем, какие объекты в PDF нас интересуют используя конфигурацию вида PDF
+            processor = PDFProcessor(self.repository, config)
 
             # Загрузка PDF
             self.repository.load_pdf(pdf_path)
 
-            # Обработка PDF с использованием процессора
-            processor.process_pdf(self.repository, config)
+            # Обработка PDF с использованием процессора и конфигурации отчёта о простое лифтов
+            extracted_data = processor.process_pdf(draw_rectangles=output_path is not None)
+            if output_path:
+                self.repository.save_pdf(output_path)
+                print(f"Размеченный PDF сохранен: {output_path}")
 
-            print(f"PDF обработан")
+            print("PDF обработан")
+
+            # Преобразование в модели данных
+            lift_company_reports = utils.convert_to_models(extracted_data)
+            return lift_company_reports
 
         except Exception as e:
             print(f"Ошибка обработки PDF: {e}")
@@ -33,6 +60,8 @@ class PDFService(PDFServiceInterface):
     def validate_pdf(self, pdf_path: str) -> None:
         """
         Проверяет наличие и корректность PDF-документа.
+
+        :param pdf_path: Путь к PDF-файлу
         """
         try:
             self.repository.load_pdf(pdf_path)
@@ -47,7 +76,7 @@ class PDFService(PDFServiceInterface):
 
         except FileNotFoundError:
             print(f"Файл '{pdf_path}' не найден.")
-            raise
+            raise FileNotFoundError(f"Файл '{pdf_path}' не найден.")
         except Exception as e:
             print(f"Ошибка валидации PDF: {e}")
-            raise
+            raise e
