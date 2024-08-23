@@ -3,6 +3,8 @@
 # НЕ БУДЕТ РАБОТАТЬ БЕЗ НАЛИЧИЯ ФАЙЛОВ В ПАПКЕ downloads
 # Для работы необходимо создать папку downloads и поместить в нее PDF файлы
 
+import json
+
 from app.repositories.pdf_repository import PDFRepository
 from app.services.config_loader import ConfigLoader
 from app.services.pdf_service import PDFService
@@ -20,7 +22,8 @@ for file in files:
     pdf_service.validate_pdf(pdf_path)
 
     # Обработка PDF
-    result = pdf_service.process_lift_pdf(pdf_path, output_path="downloads/output/" + file + "_размеченный.pdf")
+    result, report_time = pdf_service.process_lift_pdf(pdf_path,
+                                                       output_path="downloads/output/" + file + "_размеченный.pdf")
     # Если не передавать output_path, то разметка не будет сохранена
 
     for company_report in result:
@@ -32,3 +35,17 @@ for file in files:
             print(f"\tЧасы простоя: {report.downtime_hours}")
             print(f"\tРегистрационный номер: {report.reg_number}")
             print()
+    # Соберем из отчёта json c кодировкой utf-8
+    # В companies запишем отчёт по компаниям
+    companies = []
+    for company_report in result:
+        reports = []
+        for report in company_report.reports:
+            reports.append({"factory_number": report.factory_number,
+                            "start_time": report.start_time,
+                            "end_time": report.end_time,
+                            "downtime_hours": report.downtime_hours,
+                            "reg_number": report.reg_number})
+        companies.append({"company_name": company_report.company_name, "reports": reports})
+    with open("downloads/output/" + file + "_отчет.json", "w") as f:
+        json.dump({"report_time": report_time, "companies": companies}, f, ensure_ascii=False, indent=4)

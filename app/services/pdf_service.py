@@ -4,6 +4,7 @@ from app.processors.pdf.pdf_processor import PDFProcessor
 from app.repositories.pdf_repository import PDFRepository
 from app.services import utils
 from app.services.config_loader import ConfigLoader
+from app.services.utils import convert_to_rfc3339
 
 
 class PDFService(PDFServiceInterface):
@@ -23,7 +24,7 @@ class PDFService(PDFServiceInterface):
         self.config_loader = config_loader
         self.repository = repository
 
-    def process_lift_pdf(self, pdf_path: str, output_path=None) -> list[LiftCompanyReport]:
+    def process_lift_pdf(self, pdf_path: str, output_path=None) -> (list[LiftCompanyReport], str):
         """
         Обрабатывает PDF-документ о простое лифтов и возвращает массив моделей данных.
 
@@ -51,7 +52,7 @@ class PDFService(PDFServiceInterface):
 
             # Преобразование в модели данных
             lift_company_reports = utils.convert_to_models(extracted_data)
-            return lift_company_reports
+            return lift_company_reports, convert_to_rfc3339(extracted_data['report_time'])
 
         except Exception as e:
             print(f"Ошибка обработки PDF: {e}")

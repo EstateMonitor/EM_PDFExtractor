@@ -41,10 +41,15 @@ def convert_to_models(extracted_data) -> list[LiftCompanyReport]:
 def convert_to_rfc3339(datetime_str: str) -> str:
     """
     Преобразует строку с датой и временем в формат RFC 3339.
-    Ожидаемый формат строки: 'дд.мм.гггг чч:мм'
+    Ожидаемый формат строки может быть 'дд.мм.гггг чч:мм:сс' или 'дд.мм.гггг чч:мм'.
     """
-    try:
-        dt = datetime.strptime(datetime_str, "%d.%m.%Y %H:%M")
-        return dt.isoformat()
-    except ValueError as e:
-        raise ValueError(f"Ошибка преобразования времени '{datetime_str}': {e}")
+    formats = ["%d.%m.%Y %H:%M:%S", "%d.%m.%Y %H:%M"]  # Список поддерживаемых форматов
+    for fmt in formats:
+        try:
+            dt = datetime.strptime(datetime_str, fmt)
+            return dt.isoformat() + "+03:00"  # Возвращает дату в формате ISO 8601 с московским часовым поясом
+        except ValueError:
+            continue  # Продолжает попытки с другими форматами
+
+    # Если ни один формат не подошел, бросаем исключение
+    raise ValueError(f"Невозможно преобразовать дату: неподдерживаемый формат '{datetime_str}'.")
