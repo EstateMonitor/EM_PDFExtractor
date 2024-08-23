@@ -3,7 +3,7 @@ from datetime import datetime
 from app.models.pdf_models import LiftCompanyReport, LiftReport
 
 
-def convert_to_models(self, extracted_data) -> list[LiftCompanyReport]:
+def convert_to_models(extracted_data) -> list[LiftCompanyReport]:
     """
     Преобразует извлеченные данные в модели LiftCompanyReport и LiftReport с валидацией.
     """
@@ -14,8 +14,8 @@ def convert_to_models(self, extracted_data) -> list[LiftCompanyReport]:
         company_report = LiftCompanyReport(company_name)
 
         for row in block['rows']:
-            start_time = self.convert_to_rfc3339(row.get('start_time', ''))
-            end_time = self.convert_to_rfc3339(row.get('end_time', '')) if row.get('end_time') else ''
+            start_time = convert_to_rfc3339(row.get('start_time', ''))
+            end_time = convert_to_rfc3339(row.get('end_time', '')) if row.get('end_time') else ''
             downtime_hours = row.get('downtime_hours', '')
             factory_number = row.get('factory_number', '')
             reg_number = row.get('serial_number', '')
