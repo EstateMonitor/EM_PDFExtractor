@@ -26,6 +26,13 @@ class PDFRepository(PDFRepositoryInterface):
         # Get pages immediately
         self.pages = [self.doc.load_page(page_num) for page_num in range(self.doc.page_count)]
 
+    def get_sha256(self):
+        """
+        Возвращает SHA256 хеш PDF-файла
+        :return: SHA256 хеш PDF-файла
+        """
+        sha256 = self.doc.get_hash("sha256")
+
     def save_pdf(self, output_path: str):
         """
         Сохраняет изменения в PDF-файле.

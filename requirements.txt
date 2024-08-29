@@ -6,3 +6,5 @@ pathlib~=1.0.1
 python-dotenv~=1.0.1
 uvicorn~=0.30.6
 python-multipart~=0.0.9
+pydantic~=2.8.2
+httpx~=0.27.2

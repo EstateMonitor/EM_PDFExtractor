@@ -1,3 +1,6 @@
+processed_data_service:
+  base_url: "http://127.0.0.1:3000"
+  endpoint: "/api/v1/reports"
 pdf_structure:
   objects:
     - type: "text"

@@ -1,7 +1,11 @@
+import hashlib
+
 from app.interfaces.pdf_service_interface import PDFServiceInterface
 from app.models.file_model import FileModel
+from app.models.processed_data_model import ProcessedDataModel
 from app.processors.pdf.pdf_processor import PDFProcessor
 from app.repositories.pdf_repository import PDFRepository
+from app.repositories.processed_data_repository import ProcessedDataRepository
 from app.services import utils
 from app.services.config_loader import ConfigLoader
 from app.services.utils import convert_to_rfc3339
@@ -47,8 +51,22 @@ class PDFService(PDFServiceInterface):
 
             # Преобразование в модели данных
             lift_company_reports = utils.convert_to_models(extracted_data)
-            return lift_company_reports, convert_to_rfc3339(extracted_data['report_time'])
+            report_time = convert_to_rfc3339(extracted_data['report_time'])
+            file_sha256 = await self._get_pdf_hash(file)
 
+            # Преобразование объектов LiftCompanyReport в словари
+            companies_dicts = [company.dict() for company in lift_company_reports]
+            processed_data = ProcessedDataModel(
+                report_time=report_time,
+                companies=companies_dicts,
+                file_sha256=file_sha256,
+                filename=file.filename
+            )
+            # Отправка обработанных данных на другой микросервис
+            request_repository = ProcessedDataRepository()
+            url = config['processed_data_service']['base_url'] + config['processed_data_service']['endpoint']
+            response = await request_repository.send_processed_data(processed_data, url)
+            return processed_data, response
         except Exception as e:
             print(f"Ошибка обработки PDF: {e}")
             raise
@@ -76,3 +94,16 @@ class PDFService(PDFServiceInterface):
         except Exception as e:
             print(f"Ошибка валидации PDF: {e}")
             raise e
+
+    @staticmethod
+    async def _get_pdf_hash(file: FileModel) -> str:
+        """
+        Вычисляет хеш-сумму PDF-документа.
+
+        :param file: Объект FileModel, представляющий PDF-файл.
+        :return: Хеш-сумма в виде строки.
+        """
+        # Используем SHA-256 для вычисления хеша
+        sha256_hash = hashlib.sha256()
+        sha256_hash.update(file.get_content())
+        return sha256_hash.hexdigest()
