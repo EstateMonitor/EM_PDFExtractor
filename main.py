@@ -1,51 +1,27 @@
-# ДЕМОНСТРАЦИОННЫЙ ФАЙЛ
-# ПРИМЕР РАБОТЫ С СЕРВИСОМ PDF, ОБРАБОТКА PDF-ДОКУМЕНТОВ О ПРОСТОЕ ЛИФТОВ
-# НЕ БУДЕТ РАБОТАТЬ БЕЗ НАЛИЧИЯ ФАЙЛОВ В ПАПКЕ downloads
-# Для работы необходимо создать папку downloads и поместить в нее PDF файлы
+# main.py
 
-import json
+import uvicorn
+from fastapi import FastAPI
 
-from app.repositories.pdf_repository import PDFRepository
-from app.services.config_loader import ConfigLoader
-from app.services.pdf_service import PDFService
+from app.api.routers.pdf_router import router as pdf_router
+from app.lifespan import lifespan
+from core.config import config
 
-config_loader = ConfigLoader()
-repository = PDFRepository()
+# Создание экземпляра FastAPI с дополнительной конфигурацией для документации
+app = FastAPI(
+    title="PDF Processing Service",
+    description="API для обработки PDF-файлов о простое лифтов.",
+    version="1.0.0",
+    docs_url="/docs",  # URL для доступа к Swagger UI
+    redoc_url="/redoc"  # URL для доступа к ReDoc
+)
 
-pdf_service = PDFService(config_loader, repository)
+# Подключение функции жизненного цикла
+app.lifespan = lifespan
 
-files = ["25.06 проверил.pdf", "16.06 проверил.pdf"]
+# Подключение роутеров
+app.include_router(pdf_router)
 
-for file in files:
-    pdf_path = "downloads/" + file
-    # Валидация PDF перед обработкой
-    pdf_service.validate_pdf(pdf_path)
-
-    # Обработка PDF
-    result, report_time = pdf_service.process_lift_pdf(pdf_path,
-                                                       output_path="downloads/output/" + file + "_размеченный.pdf")
-    # Если не передавать output_path, то разметка не будет сохранена
-
-    for company_report in result:
-        print(f"Отчет по компании: {company_report.company_name}")
-        for i, report in enumerate(company_report.reports):
-            print(f"\t{i + 1}. Отчет по лифту: {report.factory_number}")
-            print(f"\tВремя начала: {report.start_time}")
-            print("\tВремя окончания: ", report.end_time if report.end_time else "Продолжает стоять")
-            print(f"\tЧасы простоя: {report.downtime_hours}")
-            print(f"\tРегистрационный номер: {report.reg_number}")
-            print()
-    # Соберем из отчёта json c кодировкой utf-8
-    # В companies запишем отчёт по компаниям
-    companies = []
-    for company_report in result:
-        reports = []
-        for report in company_report.reports:
-            reports.append({"factory_number": report.factory_number,
-                            "start_time": report.start_time,
-                            "end_time": report.end_time,
-                            "downtime_hours": report.downtime_hours,
-                            "reg_number": report.reg_number})
-        companies.append({"company_name": company_report.company_name, "reports": reports})
-    with open("downloads/output/" + file + "_отчет.json", "w") as f:
-        json.dump({"report_time": report_time, "companies": companies}, f, ensure_ascii=False, indent=4)
+if __name__ == "__main__":
+    # Запуск приложения
+    uvicorn.run("main:app", host=config.HOST, port=config.PORT, log_level=config.LOG_LEVEL, reload=config.RELOAD)

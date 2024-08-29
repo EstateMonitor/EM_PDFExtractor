@@ -39,7 +39,7 @@ class PDFProcessor:
             handler = self.handlers[obj['type']]
             # Обработка объекта используя соответствующий обработчик
             result = handler.handle(obj, draw_rectangles)
-            print(f"Processed {obj['type']} named {obj['name']}: {result}")
+            #print(f"Processed {obj['type']} named {obj['name']}: {result}")
             # Формируем словарь с результатами обработки используя имя объекта из конфига
             res_objects[obj['name']] = result
         return res_objects
