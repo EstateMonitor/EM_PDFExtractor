@@ -11,9 +11,8 @@ from core.config import config
 app = FastAPI(
     title="PDF Processing Service",
     description="API для обработки PDF-файлов о простое лифтов.",
-    version="1.0.0",
+    version="0.0.1",
     docs_url="/docs",  # URL для доступа к Swagger UI
-    redoc_url="/redoc"  # URL для доступа к ReDoc
 )
 
 # Подключение функции жизненного цикла
