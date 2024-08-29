@@ -2,14 +2,13 @@ import pymupdf as fitz
 
 import app.models.pdf_models as models
 from app.interfaces.pdf_repository_interface import PDFRepositoryInterface
+from app.models.file_model import FileModel
 
 
 class PDFRepository(PDFRepositoryInterface):
     """
-    Репозиторий для работы с PDF-файлами
-    Инкапсулирует работу с библиотекой PyMuPDF и предоставляет удобный интерфейс для работы с PDF
-    Позволяет загружать PDF, получать метаданные, страницы, рисунки и текст внутри прямоугольников
-    Используется в сервисном слое для работы с PDF
+    Репозиторий для работы с PDF-файлами.
+    Инкапсулирует работу с библиотекой PyMuPDF и предоставляет удобный интерфейс для работы с PDF.
     """
 
     def __init__(self):
@@ -17,19 +16,36 @@ class PDFRepository(PDFRepositoryInterface):
         self.pages = None
         self.drawings = None
 
-    def load_pdf(self, file_path):
+    def load_pdf(self, file: FileModel):
         """
-        Загружает PDF-файл для дальнейшей работы в класс репозитория
-        :param file_path: Путь к PDF-файлу
+        Загружает PDF-файл для дальнейшей работы в класс репозитория.
+
+        :param file: Объект FileModel, представляющий PDF-файл.
         """
-        self.doc = fitz.open(file_path)
+        self.doc = fitz.open(stream=file.get_content(), filetype="pdf")
         # Get pages immediately
         self.pages = [self.doc.load_page(page_num) for page_num in range(self.doc.page_count)]
 
+    def get_sha256(self):
+        """
+        Возвращает SHA256 хеш PDF-файла
+        :return: SHA256 хеш PDF-файла
+        """
+        sha256 = self.doc.get_hash("sha256")
+
+    def save_pdf(self, output_path: str):
+        """
+        Сохраняет изменения в PDF-файле.
+
+        :param output_path: Путь для сохранения PDF-файла.
+        """
+        self.doc.save(output_path)
+
     def get_num_pages(self) -> int:
         """
-        Возвращает количество страниц в PDF-файле
-        :return: Количество страниц
+        Возвращает количество страниц в PDF-файле.
+
+        :return: Количество страниц.
         """
         return self.doc.page_count
 
@@ -50,14 +66,6 @@ class PDFRepository(PDFRepositoryInterface):
         :return: Объект страницы
         """
         return self.doc.load_page(page_number)
-
-    def save_pdf(self, output_path):
-        """
-        Сохраняет PDF-файл в новый файл по указанному пути
-        :param output_path: Путь для сохранения PDF-файла
-        """
-        if self.doc:
-            self.doc.save(output_path)
 
     def get_drawings(self, page_num=None):
         """

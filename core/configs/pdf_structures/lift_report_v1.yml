@@ -1,11 +1,7 @@
+processed_data_service:
+  base_url: "http://127.0.0.1:3000"
+  endpoint: "/api/v1/reports"
 pdf_structure:
-  metadata:
-    title: "Название отчёта"
-    author: "Автор"
-    creation_date: "Дата создания"
-    subject: "Описание документа"
-    hash_sum: "Хэш-сумма"
-
   objects:
     - type: "text"
       name: "report_time" # Время отчёта

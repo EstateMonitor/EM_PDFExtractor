@@ -40,6 +40,12 @@ class LiftCompanyReport:
         self.company_name = company_name
         self.reports = []
 
+    def dict(self):
+        return {
+            "company_name": self.company_name,
+            "reports": [report.__dict__ for report in self.reports]
+        }
+
 
 class LiftReport:
     """

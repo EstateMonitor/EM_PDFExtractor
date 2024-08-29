@@ -1,5 +1,7 @@
 from abc import abstractmethod, ABC
 
+from app.models.pdf_models import LiftCompanyReport
+
 
 class PDFServiceInterface(ABC):
     """
@@ -7,7 +9,7 @@ class PDFServiceInterface(ABC):
     """
 
     @abstractmethod
-    def process_lift_pdf(self, pdf_path: str, output_path=None) -> None:
+    def process_lift_pdf(self, pdf_path: str, output_path=None) -> (list[LiftCompanyReport], str):
         """
         Обрабатывает PDF-документ о простое лифтов и возвращает массив моделей данных.
         :param pdf_path: Путь к PDF-файлу
