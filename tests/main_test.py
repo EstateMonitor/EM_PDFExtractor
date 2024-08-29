@@ -30,7 +30,7 @@ def main():
     repo = ReportRepository("http://127.0.0.1:8080")
 
     pdf_service = PDFService(config_loader, repository)
-    folder_path = "downloads"
+    folder_path = "../downloads"
     files = [f for f in os.listdir(folder_path) if os.path.isfile(os.path.join(folder_path, f))]
 
     for file in files:
