@@ -3,6 +3,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, HTTPException, status
 
 from app.dependencies import get_pdf_service
+from app.exceptions import CustomException, ErrorType
 from app.models.file_model import FileModel
 from app.services.pdf_service import PDFService
 
@@ -20,5 +21,11 @@ async def upload_pdf(file: UploadFile = File(...), pdf_service: PDFService = Dep
     try:
         result = await pdf_service.process_lift_pdf(file_model)
         return {"message": "PDF file processed successfully", "result": result}
+    except CustomException as e:
+        if e.error_type == ErrorType.CONFLICT_ERROR:
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
+        else:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))
+
     except Exception as e:
         raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=str(e))

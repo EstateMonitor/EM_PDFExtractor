@@ -2,6 +2,7 @@
 
 import httpx
 
+from app.exceptions import ConflictError
 from app.models.processed_data_model import ProcessedDataModel
 
 
@@ -34,5 +35,7 @@ class ProcessedDataRepository:
                 print(f"An error occurred while requesting {exc.request.url!r}: {exc}")
                 raise
             except httpx.HTTPStatusError as exc:
+                if exc.response.status_code == 409:  # Обработка конфликта
+                    raise ConflictError(exc.response.text)
                 print(f"Error response {exc.response.status_code} while requesting {exc.request.url!r}: {exc}")
                 raise

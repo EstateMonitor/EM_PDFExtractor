@@ -6,8 +6,9 @@
 import json
 import os
 
-from app.repositories.pdf_repository import PDFRepository
 from app.repositories.requests_repository import ReportRepository
+
+from app.repositories.pdf_repository import PDFRepository
 from app.services.config_loader import ConfigLoader
 from app.services.pdf_service import PDFService
 
