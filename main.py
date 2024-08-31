@@ -21,6 +21,17 @@ app.lifespan = lifespan
 # Подключение роутеров
 app.include_router(pdf_router)
 
+# Nuitka Project Options
+
+# Опции компиляции для различных ОС
+# nuitka-project-if: {OS} in ("Windows", "Linux"):
+#   nuitka-project: --onefile
+# nuitka-project-else:
+#   nuitka-project: --standalone
+
+# Включение данных и файлов конфигурации
+# nuitka-project: --include-data-files={MAIN_DIRECTORY}/config.yml=config.yml
+# nuitka-project: --include-data-dir={MAIN_DIRECTORY}/core/configs=core/configs
 if __name__ == "__main__":
     # Запуск приложения
     uvicorn.run("main:app", host=config.HOST, port=config.PORT, log_level=config.LOG_LEVEL, reload=config.RELOAD)

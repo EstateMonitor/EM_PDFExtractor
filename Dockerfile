@@ -1,41 +1,40 @@
-LABEL authors="Fascinat0r"
-# Этап 1: Сборка исполняемого файла с помощью PyInstaller
-FROM python:3.10-slim AS builder
+# Используем официальный образ Python для сборки
+FROM python:3.11-slim as builder
 
-# Устанавливаем рабочую директорию
-WORKDIR /app
-
-# Устанавливаем зависимости для PyInstaller
+# Устанавливаем необходимые пакеты для компиляции
 RUN apt-get update && apt-get install -y \
     build-essential \
-    wget \
-    curl \
+    python3-dev \
+    && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
-# Устанавливаем PyInstaller
-RUN pip install --no-cache-dir pyinstaller
+# Устанавливаем зависимости проекта
+COPY requirements.txt /app/requirements.txt
+WORKDIR /app
+RUN pip install --upgrade pip
+RUN pip install -r requirements.txt
 
-# Копируем файл зависимостей и устанавливаем их
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Копируем исходный код проекта
+COPY . /app
 
-# Копируем все файлы приложения в контейнер
-COPY . .
+# Компилируем Python код в C-расширения с использованием Cython
+RUN cythonize -i -3 -b .
 
-# Собираем исполняемый файл приложения с помощью PyInstaller
-RUN pyinstaller --onefile --name pdf_extractor main.py
+# Удаляем исходные .py файлы, оставляем только скомпилированные файлы
+RUN find . -name "*.py" -type f -delete
 
-# Этап 2: Создание минимального Docker-образа для запуска приложения
-FROM python:3.10-slim
+# Используем минимальный образ для финального контейнера
+FROM python:3.11-slim
+
+# Копируем скомпилированные файлы из builder этапа
+COPY --from=builder /app /app
+
+# Устанавливаем минимальные необходимые пакеты
+RUN pip install --upgrade pip \
+    && pip install -r /app/requirements.txt --no-cache-dir
 
 # Устанавливаем рабочую директорию
 WORKDIR /app
 
-# Копируем исполняемый файл из этапа сборки
-COPY --from=builder /app/dist/pdf_extractor .
-
-# Устанавливаем переменные окружения для FastAPI
-ENV PYTHONUNBUFFERED=1
-
-# Указываем команду для запуска исполняемого файла
-CMD ["./pdf_extractor"]
+# Указываем команду для запуска приложения
+CMD ["python", "main.py"]
