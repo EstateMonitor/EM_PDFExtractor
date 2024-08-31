@@ -162,3 +162,5 @@ cython_debug/
 .idea/
 
 pymupdf-venv/
+main.build
+main.dist
