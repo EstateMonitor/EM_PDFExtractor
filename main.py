@@ -1,5 +1,4 @@
 # main.py
-
 import uvicorn
 from fastapi import FastAPI
 
@@ -31,7 +30,7 @@ app.include_router(pdf_router)
 
 # Включение данных и файлов конфигурации
 # nuitka-project: --include-data-files={MAIN_DIRECTORY}/config.yml=config.yml
-# nuitka-project: --include-data-dir={MAIN_DIRECTORY}/core/configs=core/configs
+# nuitka-project: --include-data-dir={MAIN_DIRECTORY}/core/config=core/config
 if __name__ == "__main__":
     # Запуск приложения
     uvicorn.run("main:app", host=config.HOST, port=config.PORT, log_level=config.LOG_LEVEL, reload=config.RELOAD)

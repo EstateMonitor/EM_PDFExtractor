@@ -1,40 +1,49 @@
-# Используем официальный образ Python для сборки
-FROM python:3.11-slim as builder
+# Используем легковесный базовый образ Alpine для стадии сборки
+FROM python:3.11-alpine as builder
 
-# Устанавливаем необходимые пакеты для компиляции
-RUN apt-get update && apt-get install -y \
-    build-essential \
+# Устанавливаем необходимые пакеты для Alpine и Nuitka
+RUN apk update && apk add --no-cache \
+    build-base \
     python3-dev \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    py3-pip \
+    py3-setuptools \
+    py3-wheel \
+    curl \
+    musl-dev \
+    libffi-dev \
+    openssl-dev \
+    patchelf
 
-# Устанавливаем зависимости проекта
-COPY requirements.txt /app/requirements.txt
-WORKDIR /app
+# Устанавливаем pip и другие зависимости
 RUN pip install --upgrade pip
-RUN pip install -r requirements.txt
 
-# Копируем исходный код проекта
+# Копируем файлы проекта в контейнер
+WORKDIR /app
 COPY . /app
 
-# Компилируем Python код в C-расширения с использованием Cython
-RUN cythonize -i -3 -b .
+# Создаем виртуальное окружение и устанавливаем зависимости
+RUN python3 -m venv venv && \
+    . venv/bin/activate && \
+    pip install -r requirements.txt && \
+    pip install nuitka  # Устанавливаем Nuitka в виртуальное окружение
 
-# Удаляем исходные .py файлы, оставляем только скомпилированные файлы
-RUN find . -name "*.py" -type f -delete
+# Компиляция проекта с помощью Nuitka
+RUN . venv/bin/activate && \
+    venv/bin/python3 -m nuitka --follow-imports --report=compilation-report.xml main.py
 
-# Используем минимальный образ для финального контейнера
-FROM python:3.11-slim
+# Собираем минимальный образ для запуска приложения
+FROM alpine:latest as runtime
 
-# Копируем скомпилированные файлы из builder этапа
-COPY --from=builder /app /app
+# Устанавливаем необходимые библиотеки для запуска Python
+RUN apk add --no-cache libstdc++ libgcc
 
-# Устанавливаем минимальные необходимые пакеты
-RUN pip install --upgrade pip \
-    && pip install -r /app/requirements.txt --no-cache-dir
-
-# Устанавливаем рабочую директорию
+# Копируем скомпилированный бинарник и конфигурационные файлы в минимальный образ
 WORKDIR /app
+COPY --from=builder /app/main.bin /app/
+COPY --from=builder /app/config.yml /app/
+COPY --from=builder /app/core/config /app/core/config
+COPY --from=builder /app/static /app/static
+COPY --from=builder /app/compilation-report.xml /app/
 
-# Указываем команду для запуска приложения
-CMD ["python", "main.py"]
+# Устанавливаем точку входа
+ENTRYPOINT ["/app/main.bin"]
