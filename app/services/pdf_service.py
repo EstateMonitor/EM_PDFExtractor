@@ -71,6 +71,33 @@ class PDFService(PDFServiceInterface):
             print(f"Ошибка обработки PDF: {e}")
             raise
 
+    async def process_gaz_pdf(self, file: FileModel, output_path=None):
+        """
+        Обрабатывает PDF-документ от ГазСтройПрома и возвращает массив моделей данных.
+        :param file: Объект FileModel, представляющий PDF-файл от ГазСтройПрома.
+        :param output_path: Путь для сохранения размеченного PDF-файла (необязательный).
+        :return: Массив моделей GazStroyPromReport.
+        """
+        сonfig_path = "core/configs/pdf_structures/gazstroy_report_v1.yml"
+        try:
+            config = self.config_loader.load_config(сonfig_path)
+            processor = PDFProcessor(self.repository, config)
+            self.validate_pdf(file)
+
+            # Загрузка PDF из FileModel
+            self.repository.load_pdf(file)
+
+            # Обработка PDF с использованием процессора и конфигурации отчёта о простое лифтов
+            extracted_data = processor.process_pdf(draw_rectangles=output_path is not None)
+            if output_path:
+                self.repository.save_pdf(output_path)
+                print(f"Размеченный PDF сохранен: {output_path}")
+
+            print("PDF обработан")
+        except Exception as e:
+            print(f"Ошибка обработки PDF: {e}")
+            raise e
+
     def validate_pdf(self, file: FileModel) -> None:
         """
         Проверяет наличие и корректность PDF-документа.

@@ -1,0 +1,12 @@
+pdf_structure:
+  objects:
+    - type: "text"
+      name: [ "contract_number", "purpose", "construction_code", "project_code", "contractor_name", "customer_name" ]
+      method: "absolute"
+      offset:
+        x: 0
+        y: 0
+      dimensions:
+        width: 600
+        height: 600
+      page_number: 0
