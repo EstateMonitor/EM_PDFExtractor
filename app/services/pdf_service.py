@@ -31,7 +31,7 @@ class PDFService(PDFServiceInterface):
         :param output_path: Путь для сохранения размеченного PDF-файла (необязательный).
         :return: Массив моделей LiftCompanyReport.
         """
-        config_path = "core/configs/pdf_structures/lift_report_v1.yml"
+        config_path = "core/config/pdf_structures/lift_report_v1.yml"
         try:
             config = self.config_loader.load_config(config_path)
             processor = PDFProcessor(self.repository, config)
