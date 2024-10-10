@@ -66,7 +66,7 @@ class TextHandler:
     @staticmethod
     def extract_with_multiple_patterns(patterns, text):
         """
-        Применяет массив регулярных выражений для выделения значений.
+        Применяет массив регулярных выражений для выделения значений и форматирует группы по шаблону.
         :param patterns: Список регулярных выражений и целевых полей.
         :param text: Исходный текст из PDF для обработки.
         :return: Словарь с извлечёнными значениями.
@@ -76,6 +76,9 @@ class TextHandler:
         for pattern_config in patterns:
             target = pattern_config['target']
             raw_pattern = pattern_config['regex']
+            group_format = pattern_config.get('group_format',
+                                              "{}")  # Получаем формат групп или используем "{}" по умолчанию
+
             if not raw_pattern:  # Если шаблон пустой, пропускаем его
                 extracted_data[target] = None
                 continue
@@ -84,8 +87,10 @@ class TextHandler:
             match = re.search(regex_pattern, text)
 
             if match:
-                # Добавляем совпавшую группу в словарь с именем из target
-                extracted_data[target] = match.group(1).strip()
+                # Извлекаем все группы из совпадения
+                groups = match.groups()
+                # Применяем форматирование групп согласно шаблону group_format
+                extracted_data[target] = group_format.format(*groups)
             else:
                 extracted_data[target] = None  # Если нет совпадения, возвращаем None
 

@@ -14,16 +14,22 @@ pdf_structure:
       patterns:
         - target: "contract_number"
           regex: "ДОГОВОР СУБПОДРЯДА\\s*№\\s*([^\\n]+)"
+          group_format: "{}"
         - target: "project_description"
           regex: "на\\s*([\\s\\S]+?)\\s*код стройки"
+          group_format: "{}"
         - target: "construction_code"
           regex: "код стройки\\s*([^\\s\\n]+)"
+          group_format: "{}"
         - target: "nomenclature_code"
           regex: "\\(код\\s+(?:номенклатурной группы проекта|проектный код)\\s*([^\\s\\n\\)]+)\\)"
+          group_format: "{}"
         - target: "contractor_name"
           regex: "между\\s*([А-ЯЁа-яё«»\\s]+?)\\s*и"
+          group_format: "{}"
         - target: "customer_name"
           regex: "\\s*и\\s*([А-ЯЁа-яё«»\\s]+)\\s*\\Z"
+          group_format: "{}"
 
     - type: "text"
       name: "date"
@@ -37,12 +43,12 @@ pdf_structure:
       page_number: 2
 
     - type: "text"
-      name: [ "price_with_vat", "price_without_vat" ]  # Два значения: цена с НДС и без НДС
+      name: [ "price_without_vat", "price_with_vat" ]  # Два значения: цена без НДС и цена с НДС
       method: "by_pointers"
       pointer:
-        type: "text"  # Тип указателя — текст
+        type: "text"
         criteria:
-          regex: "Цена Работ составляет"  # Регулярное выражение для нахождения указателя
+          regex: "Цена Работ составляет"  # Начальное регулярное выражение для поиска указателя
       offset:
         x: -150
         y: 0
@@ -50,8 +56,10 @@ pdf_structure:
         width: 600
         height: 130
       page_number: 0
-      patterns: # Пустые паттерны на будущее, если понадобится уточнение поиска значений
-        - target: "price_with_vat"
-          regex: "(.*)"  # Оставляем пустую строку как заглушку
+      patterns:
         - target: "price_without_vat"
-          regex: "(.*)"  # Оставляем пустую строку как заглушку
+          regex: "Цена Работ составляет\\s*([\\d\\s]+)\\s*\\([\\s\\S]*?\\)\\s*руб(?:[а-яё]*)\\s*([\\d\\s]+)\\s*коп(?:[а-яё]*)"
+          group_format: "{} рублей {} копеек"  # Формат суммы
+        - target: "price_with_vat"
+          regex: "при этом Цена Работ составляет\\s*([\\d\\s]+)\\s*\\([\\s\\S]*?\\)\\s*руб(?:[а-яё]*)\\s*([\\d\\s]+)\\s*коп(?:[а-яё]*)"
+          group_format: "{} рублей {} копеек"  # Формат суммы
