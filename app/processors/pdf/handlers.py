@@ -1,6 +1,7 @@
 import re
 
 import app.models.pdf_models as models
+from app.repositories.pdf_repository import PDFRepository
 
 
 class TextHandler:
@@ -9,7 +10,7 @@ class TextHandler:
     Нужен для извлечения текста или нескольких значений с использованием регулярных выражений.
     """
 
-    def __init__(self, repository):
+    def __init__(self, repository: PDFRepository):
         self.repository = repository
 
     def handle(self, config, draw_rectangles: bool):
@@ -19,19 +20,48 @@ class TextHandler:
         :param draw_rectangles: Рисовать ли прямоугольник вокруг обработанного текста (для отладки).
         :return: Словарь с несколькими значениями, если используется массив регулярных выражений.
         """
-        # Вычисляем прямоугольную область для извлечения текста
-        rect = self.calculate_rect(config, config['page_number'])
+        # Определяем метод извлечения (absolute или by_pointers)
+        if config['method'] == 'absolute':
+            rect = self.calculate_rect(config, config['page_number'])
+        elif config['method'] == 'by_pointers':
+            rect = self.calculate_rect_by_pointers(config)
+        else:
+            raise ValueError(f"Неизвестный метод извлечения: {config['method']}")
+
+        # Извлечение текста из заданной прямоугольной области
         text = self.repository.get_text(rect)
 
         if draw_rectangles:
             self.repository.draw_rectangle(rect, color=(0, 0, 1))
 
-        # Проверяем, есть ли поле patterns для использования нескольких регулярных выражений
+        # Проверяем, используется ли регулярное выражение для извлечения нескольких значений
         if 'patterns' in config:
             return self.extract_with_multiple_patterns(config['patterns'], text)
 
         # Если есть только одиночное имя, возвращаем текст с этим именем
         return {config['name']: text}
+
+    def calculate_rect_by_pointers(self, config):
+        """
+        Вычисление прямоугольника относительно текста-указателя.
+        :param config: Конфигурация обработки текстового поля.
+        :return: Прямоугольник models.Rect.
+        """
+        pointer_regex = config['pointer']['criteria']['regex']
+
+        # Используем метод репозитория для поиска координат текста по регулярному выражению
+        rect = self.repository.find_text_coordinates(pointer_regex)
+
+        if rect is None:
+            raise ValueError(f"Указатель текста '{pointer_regex}' не найден.")
+
+        # Рассчитываем смещение и размеры относительно найденного текста
+        rect.x0 += config['offset']['x']
+        rect.y0 += config['offset']['y']
+        rect.x1 = rect.x0 + config['dimensions']['width']
+        rect.y1 = rect.y0 + config['dimensions']['height']
+
+        return rect
 
     @staticmethod
     def extract_with_multiple_patterns(patterns, text):
@@ -46,6 +76,10 @@ class TextHandler:
         for pattern_config in patterns:
             target = pattern_config['target']
             raw_pattern = pattern_config['regex']
+            if not raw_pattern:  # Если шаблон пустой, пропускаем его
+                extracted_data[target] = None
+                continue
+
             regex_pattern = raw_pattern.replace("\\\\", "\\")  # Преобразуем регулярное выражение
             match = re.search(regex_pattern, text)
 

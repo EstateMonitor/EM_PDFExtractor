@@ -14,7 +14,6 @@ class PDFRepository(PDFRepositoryInterface):
     def __init__(self):
         self.doc = None
         self.pages = None
-        self.drawings = None
 
     def load_pdf(self, file: FileModel):
         """
@@ -23,8 +22,37 @@ class PDFRepository(PDFRepositoryInterface):
         :param file: Объект FileModel, представляющий PDF-файл.
         """
         self.doc = fitz.open(stream=file.get_content(), filetype="pdf")
-        # Get pages immediately
+        # Загружаем все страницы сразу для удобства доступа
         self.pages = [self.doc.load_page(page_num) for page_num in range(self.doc.page_count)]
+
+    def find_text_coordinates(self, needle: str) -> models.Rect:
+        """
+        Ищет текст на всех страницах и возвращает координаты в виде объекта Rect.
+        :param needle: Текст для поиска.
+        :return: Объект Rect с координатами или None, если текст не найден.
+        """
+        # Проходим по всем страницам, начиная с первой
+        for page_num, page in enumerate(self.pages):
+            # Поиск текста на странице (учитывается только точное совпадение, а не регулярка)
+            text_instances = page.search_for(needle)
+
+            if text_instances:
+                # Если найдено совпадение, берём первый прямоугольник и возвращаем его координаты в модели Rect
+                rect = text_instances[0]  # Берём первое совпадение
+                return models.Rect(rect.x0, rect.y0, rect.x1, rect.y1, page_num)
+
+        # Если текст не найден ни на одной из страниц, возвращаем None
+        return None
+
+    def get_text(self, rect: models.Rect):
+        """
+        Возвращает текст внутри прямоугольника на странице PDF.
+        :param rect: Прямоугольник с координатами и номером страницы models.Rect.
+        :return: Текст внутри прямоугольника.
+        """
+        page = rect.page
+        fitz_rect = fitz.Rect(rect.x0, rect.y0, rect.x1, rect.y1)
+        return self.pages[page].get_textbox(fitz_rect).strip()
 
     def get_sha256(self):
         """

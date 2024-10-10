@@ -24,6 +24,7 @@ pdf_structure:
           regex: "между\\s*([А-ЯЁа-яё«»\\s]+?)\\s*и"
         - target: "customer_name"
           regex: "\\s*и\\s*([А-ЯЁа-яё«»\\s]+)\\s*\\Z"
+
     - type: "text"
       name: "date"
       method: "absolute"
@@ -34,3 +35,23 @@ pdf_structure:
         width: 200
         height: 70
       page_number: 2
+
+    - type: "text"
+      name: [ "price_with_vat", "price_without_vat" ]  # Два значения: цена с НДС и без НДС
+      method: "by_pointers"
+      pointer:
+        type: "text"  # Тип указателя — текст
+        criteria:
+          regex: "Цена Работ составляет"  # Регулярное выражение для нахождения указателя
+      offset:
+        x: -150
+        y: 0
+      dimensions:
+        width: 600
+        height: 130
+      page_number: 0
+      patterns: # Пустые паттерны на будущее, если понадобится уточнение поиска значений
+        - target: "price_with_vat"
+          regex: "(.*)"  # Оставляем пустую строку как заглушку
+        - target: "price_without_vat"
+          regex: "(.*)"  # Оставляем пустую строку как заглушку
