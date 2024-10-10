@@ -1,7 +1,7 @@
 pdf_structure:
   objects:
     - type: "text"
-      name: [ "contract_number", "purpose", "construction_code", "project_code", "contractor_name", "customer_name" ]
+      name: [ "contract_number", "project_description", "construction_code", "nomenclature_code", "contractor_name", "customer_name" ]
       method: "absolute"
       offset:
         x: 0
@@ -10,3 +10,27 @@ pdf_structure:
         width: 600
         height: 600
       page_number: 0
+      # Массив регулярных выражений для каждого элемента
+      patterns:
+        - target: "contract_number"
+          regex: "ДОГОВОР СУБПОДРЯДА\\s*№\\s*([^\\n]+)"
+        - target: "project_description"
+          regex: "на\\s*([\\s\\S]+?)\\s*код стройки"
+        - target: "construction_code"
+          regex: "код стройки\\s*([^\\s\\n]+)"
+        - target: "nomenclature_code"
+          regex: "\\(код\\s+(?:номенклатурной группы проекта|проектный код)\\s*([^\\s\\n\\)]+)\\)"
+        - target: "contractor_name"
+          regex: "между\\s*([А-ЯЁа-яё«»\\s]+?)\\s*и"
+        - target: "customer_name"
+          regex: "\\s*и\\s*([А-ЯЁа-яё«»\\s]+)\\s*\\Z"
+    - type: "text"
+      name: "date"
+      method: "absolute"
+      offset:
+        x: 370
+        y: 0
+      dimensions:
+        width: 200
+        height: 70
+      page_number: 2

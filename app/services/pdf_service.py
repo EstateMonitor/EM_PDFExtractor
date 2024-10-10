@@ -78,7 +78,7 @@ class PDFService(PDFServiceInterface):
         :param output_path: Путь для сохранения размеченного PDF-файла (необязательный).
         :return: Массив моделей GazStroyPromReport.
         """
-        сonfig_path = "core/configs/pdf_structures/gazstroy_report_v1.yml"
+        сonfig_path = "../core/config/pdf_structures/gaz_stroi_prom_v1.yml"
         try:
             config = self.config_loader.load_config(сonfig_path)
             processor = PDFProcessor(self.repository, config)
@@ -89,6 +89,7 @@ class PDFService(PDFServiceInterface):
 
             # Обработка PDF с использованием процессора и конфигурации отчёта о простое лифтов
             extracted_data = processor.process_pdf(draw_rectangles=output_path is not None)
+            print(extracted_data)
             if output_path:
                 self.repository.save_pdf(output_path)
                 print(f"Размеченный PDF сохранен: {output_path}")

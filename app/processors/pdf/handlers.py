@@ -1,10 +1,12 @@
+import re
+
 import app.models.pdf_models as models
 
 
 class TextHandler:
     """
-    Обработчик текстовых блоков в PDF-документе
-    Нужен для извлечения "одиночного" текста
+    Обработчик текстовых блоков в PDF-документе.
+    Нужен для извлечения текста или нескольких значений с использованием регулярных выражений.
     """
 
     def __init__(self, repository):
@@ -12,24 +14,56 @@ class TextHandler:
 
     def handle(self, config, draw_rectangles: bool):
         """
-        Обработка текстового поля в PDF-документе по конфигурации
-        :param config: Конфигурация обработки текстового поля
-        :param draw_rectangles: Рисовать ли прямоугольник вокруг обработанного текста (для отладки)
-        :return: Текст внутри прямоугольника
+        Обработка текстового поля в PDF-документе по конфигурации.
+        :param config: Конфигурация обработки текстового поля.
+        :param draw_rectangles: Рисовать ли прямоугольник вокруг обработанного текста (для отладки).
+        :return: Словарь с несколькими значениями, если используется массив регулярных выражений.
         """
+        # Вычисляем прямоугольную область для извлечения текста
         rect = self.calculate_rect(config, config['page_number'])
         text = self.repository.get_text(rect)
+
         if draw_rectangles:
             self.repository.draw_rectangle(rect, color=(0, 0, 1))
-        return text
+
+        # Проверяем, есть ли поле patterns для использования нескольких регулярных выражений
+        if 'patterns' in config:
+            return self.extract_with_multiple_patterns(config['patterns'], text)
+
+        # Если есть только одиночное имя, возвращаем текст с этим именем
+        return {config['name']: text}
+
+    @staticmethod
+    def extract_with_multiple_patterns(patterns, text):
+        """
+        Применяет массив регулярных выражений для выделения значений.
+        :param patterns: Список регулярных выражений и целевых полей.
+        :param text: Исходный текст из PDF для обработки.
+        :return: Словарь с извлечёнными значениями.
+        """
+        extracted_data = {}
+
+        for pattern_config in patterns:
+            target = pattern_config['target']
+            raw_pattern = pattern_config['regex']
+            regex_pattern = raw_pattern.replace("\\\\", "\\")  # Преобразуем регулярное выражение
+            match = re.search(regex_pattern, text)
+
+            if match:
+                # Добавляем совпавшую группу в словарь с именем из target
+                extracted_data[target] = match.group(1).strip()
+            else:
+                extracted_data[target] = None  # Если нет совпадения, возвращаем None
+
+        return extracted_data
 
     @staticmethod
     def calculate_rect(config, page):
         """
-        Вычисление прямоугольника по конфигурации и номеру страницы (по сути по полным трёхмерным координатам)
-        :param config: Конфигурация обработки текстового поля
-        :param page: Номер страницы
-        :return: Прямоугольник models.Rect
+        Вычисление прямоугольника по конфигурации и номеру страницы.
+        :param config: Конфигурация обработки текстового поля.
+        :param page: Номер страницы.
+        :return: Прямоугольник models.Rect.
         """
         x = config['offset']['x']
         y = config['offset']['y']
