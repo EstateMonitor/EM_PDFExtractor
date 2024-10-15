@@ -8,7 +8,7 @@ from app.services.pdf_service import PDFService
 
 def test_processing_gaz_pdf():
     # Arrange
-    filename = "../downloads/gaz_1.pdf"
+    filename = "../downloads/gaz_0.pdf"
     with open(filename, "rb") as f:  # Используем бинарный режим
         file_content = f.read()
         file = FileModel(filename, file_content)

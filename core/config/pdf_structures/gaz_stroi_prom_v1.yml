@@ -16,7 +16,7 @@ pdf_structure:
           regex: "ДОГОВОР СУБПОДРЯДА\\s*№\\s*([^\\n]+)"
           group_format: "{}"
         - target: "project_description"
-          regex: "на\\s*([\\s\\S]+?)\\s*код стройки"
+          regex: "\\n\\s*([\\s\\S]+?)\\s*код стройки"
           group_format: "{}"
         - target: "construction_code"
           regex: "код стройки\\s*([^\\s\\n]+)"
@@ -40,7 +40,7 @@ pdf_structure:
       dimensions:
         width: 200
         height: 70
-      page_number: 2
+      page_number: 3
 
     - type: "text"
       name: [ "price_without_vat", "price_with_vat" ]  # Два значения: цена без НДС и цена с НДС
@@ -48,7 +48,7 @@ pdf_structure:
       pointer:
         type: "text"
         criteria:
-          regex: "Цена Работ составляет"  # Начальное регулярное выражение для поиска указателя
+          regex: "Цена Работ не должна"  # Начальное регулярное выражение для поиска указателя
       offset:
         x: -150
         y: 0
@@ -57,9 +57,9 @@ pdf_structure:
         height: 130
       page_number: 0
       patterns:
-        - target: "price_without_vat"
-          regex: "Цена Работ составляет\\s*([\\d\\s]+)\\s*\\([\\s\\S]*?\\)\\s*руб(?:[а-яё]*)\\s*([\\d\\s]+)\\s*коп(?:[а-яё]*)"
-          group_format: "{} рублей {} копеек"  # Формат суммы
         - target: "price_with_vat"
-          regex: "при этом Цена Работ составляет\\s*([\\d\\s]+)\\s*\\([\\s\\S]*?\\)\\s*руб(?:[а-яё]*)\\s*([\\d\\s]+)\\s*коп(?:[а-яё]*)"
+          regex: "Цена Работ не должна превышать\\s*([\\d\\s]+)\\s*\\([\\s\\S]*?\\)\\s*руб(?:[а-яё]*)\\s*([\\d\\s]+)\\s*коп(?:[а-яё]*)"
+          group_format: "{} рублей {} копеек"  # Формат суммы
+        - target: "vat"
+          regex: "налогах и сборах в размере\\s*([\\d\\s]+)\\s*\\([\\s\\S]*?\\)\\s*руб(?:[а-яё]*)\\s*([\\d\\s]+)\\s*коп(?:[а-яё]*)"
           group_format: "{} рублей {} копеек"  # Формат суммы

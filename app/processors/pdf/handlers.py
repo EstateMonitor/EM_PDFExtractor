@@ -1,6 +1,7 @@
 import re
 
 import app.models.pdf_models as models
+from app.processors.pdf.utils import string_cleanup
 from app.repositories.pdf_repository import PDFRepository
 
 
@@ -39,7 +40,7 @@ class TextHandler:
             return self.extract_with_multiple_patterns(config['patterns'], text)
 
         # Если есть только одиночное имя, возвращаем текст с этим именем
-        return {config['name']: text}
+        return {config['name']: string_cleanup(text)}
 
     def calculate_rect_by_pointers(self, config):
         """
@@ -90,7 +91,8 @@ class TextHandler:
                 # Извлекаем все группы из совпадения
                 groups = match.groups()
                 # Применяем форматирование групп согласно шаблону group_format
-                extracted_data[target] = group_format.format(*groups)
+                extracted_data[target] = string_cleanup(group_format.format(*groups))
+
             else:
                 extracted_data[target] = None  # Если нет совпадения, возвращаем None
 
